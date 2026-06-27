@@ -1,0 +1,10 @@
+2026-06-27 20:40:06 [INFO] Logger initialized
+2026-06-27 20:40:06 [INFO] Log file: ./backup.log
+2026-06-27 20:40:06 [INFO] Log level: INFO
+2026-06-27 20:40:06 [INFO] =======================================
+2026-06-27 20:40:06 [INFO]  Backup Service starting
+2026-06-27 20:40:06 [INFO]  Base: /Users/irattiz/Documents/projects/backup-manager
+2026-06-27 20:40:06 [INFO]  Log : ./backup.log
+2026-06-27 20:40:06 [INFO] =======================================
+2026-06-27 20:40:06 [INFO] Backup service is alive (Phase 1 scaffold)
+2026-06-27 20:40:06 [SUCCESS] Initialization completed successfully
