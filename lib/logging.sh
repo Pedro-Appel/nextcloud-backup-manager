@@ -5,7 +5,7 @@
 # =========================
 
 # Default log file (can be overridden by environment or config later)
-LOG_FILE="${LOG_FILE:-/var/log/backup-service/backup.log}"
+LOG_FILE="${LOG_FILE:-./backup.log}"
 LOG_LEVEL="${LOG_LEVEL:-INFO}"
 
 # -------------------------

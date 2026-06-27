@@ -34,6 +34,9 @@ export BACKUP_STATE_DIR="."
 export LOG_LEVEL=INFO
 source "${BACKUP_LIB_DIR}/logging.sh"
 source "${BACKUP_LIB_DIR}/config.sh"
+source "${BACKUP_LIB_DIR}/drive.sh"
+source "${BACKUP_LIB_DIR}/nextcloud.sh"
+source "${BACKUP_LIB_DIR}/database.sh"
 # Configuration (will evolve in next step)
 # source "${BACKUP_LIB_DIR}/config.sh"
 
@@ -76,4 +79,7 @@ common_init() {
   common_init_logging
   log_info "Config loaded: $CONFIG_FILE"
   log_info "Backup mount: $BACKUP_MOUNT"
+
+  database_init
+  log_info "Database Initiated"
 }

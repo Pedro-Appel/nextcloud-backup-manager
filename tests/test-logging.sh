@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 set -Eeuo pipefail
-
-source ./lib/logging.sh
+export BACKUP_BASE_DIR="/Users/irattiz/Documents/projects/backup-manager"
+source ${BACKUP_BASE_DIR}/lib/logging.sh
 
 LOG_LEVEL=DEBUG
 

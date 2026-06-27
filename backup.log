@@ -1,10 +1,14 @@
-2026-06-27 20:40:06 [INFO] Logger initialized
-2026-06-27 20:40:06 [INFO] Log file: ./backup.log
-2026-06-27 20:40:06 [INFO] Log level: INFO
-2026-06-27 20:40:06 [INFO] =======================================
-2026-06-27 20:40:06 [INFO]  Backup Service starting
-2026-06-27 20:40:06 [INFO]  Base: /Users/irattiz/Documents/projects/backup-manager
-2026-06-27 20:40:06 [INFO]  Log : ./backup.log
-2026-06-27 20:40:06 [INFO] =======================================
-2026-06-27 20:40:06 [INFO] Backup service is alive (Phase 1 scaffold)
-2026-06-27 20:40:06 [SUCCESS] Initialization completed successfully
+2026-06-27 22:18:45 [INFO] =======================================
+2026-06-27 22:18:45 [INFO]  Backup Service starting
+2026-06-27 22:18:45 [INFO]  Base: /Users/irattiz/Documents/projects/backup-manager
+2026-06-27 22:18:45 [INFO]  Log : ./backup.log
+2026-06-27 22:18:45 [INFO] =======================================
+2026-06-27 22:18:45 [INFO] Logger initialized
+2026-06-27 22:18:45 [INFO] Log file: ./backup.log
+2026-06-27 22:18:45 [INFO] Log level: INFO
+2026-06-27 22:18:45 [INFO] Config loaded: /Users/irattiz/Documents/projects/backup-manager/backup.conf
+2026-06-27 22:18:45 [INFO] Backup mount: /mnt/backup
+2026-06-27 22:18:45 [INFO] Database Initiated
+2026-06-27 22:18:45 [DEBUG] Running: nextcloud.occ config:system:get dbtype
+2026-06-27 22:18:45 [ERROR] nextcloud.occ failed
+2026-06-27 22:18:45 [ERROR] /Users/irattiz/Documents/projects/backup-manager/lib/nextcloud.sh: line 33: timeout: command not found

@@ -42,20 +42,28 @@ config_require_var() {
 # Validate config values
 # ----------------------------
 config_validate() {
+  
   config_require_var "BACKUP_MOUNT"
-  config_require_var "NEXTCLOUD_PATH"
   config_require_var "RESTIC_REPOSITORY"
 
-  # Ensure paths are absolute
-  [[ "$BACKUP_MOUNT" == /* ]] || {
-    echo "[ERROR] BACKUP_MOUNT must be absolute path"
-    return 1
-  }
+  # Nextcloud (Snap or other)
+  config_require_var "NEXTCLOUD_DATA_DIR"
+  config_require_var "NEXTCLOUD_CONFIG_DIR"
 
-  [[ "$NEXTCLOUD_PATH" == /* ]] || {
-    echo "[ERROR] NEXTCLOUD_PATH must be absolute path"
-    return 1
-  }
+  # sanity checks
+  [[ "$BACKUP_MOUNT" == /* ]] || return 1
+  [[ "$NEXTCLOUD_DATA_DIR" == /* ]] || return 1
+  [[ "$NEXTCLOUD_CONFIG_DIR" == /* ]] || return 1
+}
+
+config_autodetect_nextcloud() {
+  # Snap detection fallback (only if user didn't define manually)
+  if [[ -z "${NEXTCLOUD_DATA_DIR:-}" ]] && command -v snap >/dev/null 2>&1; then
+    if snap list nextcloud >/dev/null 2>&1; then
+      NEXTCLOUD_DATA_DIR="/var/snap/nextcloud/common/nextcloud/data"
+      NEXTCLOUD_CONFIG_DIR="/var/snap/nextcloud/current/nextcloud/config"
+    fi
+  fi
 }
 
 # ----------------------------
@@ -63,5 +71,6 @@ config_validate() {
 # ----------------------------
 config_init() {
   config_load
+  config_autodetect_nextcloud
   config_validate
 }
