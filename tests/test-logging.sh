@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 
 set -Eeuo pipefail
-export BACKUP_BASE_DIR="/Users/irattiz/Documents/projects/backup-manager"
+export BACKUP_BASE_DIR=/home/rat/nextcloud-backup-manager
+source ${BACKUP_BASE_DIR}/lib/utils.sh
 source ${BACKUP_BASE_DIR}/lib/logging.sh
 
 LOG_LEVEL=DEBUG

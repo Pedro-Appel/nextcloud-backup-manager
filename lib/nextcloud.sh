@@ -57,12 +57,16 @@ nextcloud_occ() {
 # Enable maintenance mode
 #
 nextcloud_maintenance_enable() {
+    if is_dry_run; then
+        log_info "[DRY-RUN] Would start Nextcloud maintenance mode"
+        return 0
+    fi
     log_info "Enabling Nextcloud maintenance mode..."
 
     nextcloud_occ maintenance:mode --on >/dev/null ||
         return 1
 
-    log_success "Maintenance mode enabled"
+    log_info "Maintenance mode enabled"
 }
 
 #
@@ -71,10 +75,14 @@ nextcloud_maintenance_enable() {
 nextcloud_maintenance_disable() {
     log_info "Disabling Nextcloud maintenance mode..."
 
+    if is_dry_run; then
+        log_info "[DRY-RUN] Would disable Nextcloud maintenance mode"
+        return 0
+    fi
     nextcloud_occ maintenance:mode --off >/dev/null ||
         return 1
 
-    log_success "Maintenance mode disabled"
+    log_info "Maintenance mode disabled"
 }
 
 #

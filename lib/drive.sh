@@ -16,15 +16,17 @@ drive_mount() {
 
   log_warn "Drive not mounted: $BACKUP_MOUNT"
   log_info "Attempting mount..."
+  local device
 
-  mkdir -p "$BACKUP_MOUNT"
+  device="$(drive_find_device)"
 
-  if mount "$BACKUP_MOUNT"; then
-    log_success "Drive mounted: $BACKUP_MOUNT"
-  else
-    log_error "Failed to mount drive: $BACKUP_MOUNT"
-    return 1
-  fi
+  [[ -n "$device" ]] || {
+      log_error "Backup device not found (UUID: $BACKUP_DEVICE_UUID)"
+      return 1
+  }
+
+  create_directory "$BACKUP_MOUNT"
+  mount "$device" "$BACKUP_MOUNT"
 }
 
 drive_check_writable() {
@@ -65,5 +67,9 @@ drive_validate() {
   drive_check_writable || return 1
   drive_check_space || return 1
 
-  log_success "Drive validation passed"
+  log_info "Drive validation passed"
+}
+
+drive_find_device() {
+    blkid -U "$BACKUP_DEVICE_UUID"
 }

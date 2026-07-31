@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-export BACKUP_BASE_DIR="/Users/irattiz/Documents/projects/backup-manager"
-
 source ${BACKUP_BASE_DIR}/lib/common.sh
 source ${BACKUP_BASE_DIR}/lib/nextcloud.sh
 source ${BACKUP_BASE_DIR}/lib/database.sh
