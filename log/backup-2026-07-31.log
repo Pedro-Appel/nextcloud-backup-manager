@@ -1,0 +1,63 @@
+2026-07-31 17:09:14 [INFO   ] Restic repository already initialized
+2026-07-31 17:09:14 [INFO   ] Unlocking repository...
+2026-07-31 17:09:14 [INFO   ] Repository unlocked
+2026-07-31 17:09:14 [INFO   ] Starting Restic backup...
+2026-07-31 17:09:27 [DEBUG  ] Running: nextcloud.occ maintenance:mode
+2026-07-31 17:09:28 [DEBUG  ] Maintenance mode is currently disabled
+
+2026-07-31 17:09:28 [INFO   ] ============================================================
+2026-07-31 17:09:28 [INFO   ] Configuration
+2026-07-31 17:09:28 [INFO   ] ============================================================
+2026-07-31 17:09:28 [DEBUG  ] Base: /home/rat/nextcloud-backup-manager
+
+2026-07-31 17:09:28 [INFO   ] ============================================================
+2026-07-31 17:09:28 [INFO   ] Logger
+2026-07-31 17:09:28 [INFO   ] ============================================================
+2026-07-31 17:09:28 [DEBUG  ] Log file: /home/rat/nextcloud-backup-manager/log/backup-2026-07-31.log
+2026-07-31 17:09:28 [DEBUG  ] Log level: DEBUG
+2026-07-31 17:09:28 [DEBUG  ] Config loaded: /home/rat/nextcloud-backup-manager/config/backup.conf
+2026-07-31 17:09:28 [DEBUG  ] Backup mount: /mnt/backup
+
+2026-07-31 17:09:28 [INFO   ] ============================================================
+2026-07-31 17:09:28 [INFO   ] Initialization
+2026-07-31 17:09:28 [INFO   ] ============================================================
+2026-07-31 17:09:28 [DEBUG  ] NextCloud Backup initiated
+
+2026-07-31 17:09:28 [INFO   ] ============================================================
+2026-07-31 17:09:28 [INFO   ] Restic
+2026-07-31 17:09:28 [INFO   ] ============================================================
+2026-07-31 17:09:28 [DEBUG  ] Restic Initiated
+
+
+2026-07-31 17:09:28 [INFO   ] ============================================================
+2026-07-31 17:09:28 [INFO   ] Environment Validation
+2026-07-31 17:09:28 [INFO   ] ============================================================
+2026-07-31 17:09:28 [INFO   ] Validating backup drive...
+2026-07-31 17:09:28 [INFO   ] Drive is writable
+2026-07-31 17:09:28 [INFO   ] Sufficient disk space available
+2026-07-31 17:09:28 [INFO   ] Drive validation passed
+2026-07-31 17:09:28 [DEBUG  ] Environment Validation took: (0s)
+
+2026-07-31 17:09:28 [INFO   ] ============================================================
+2026-07-31 17:09:28 [INFO   ] Consistency boundary
+2026-07-31 17:09:28 [INFO   ] ============================================================
+2026-07-31 17:09:28 [INFO   ] Enabling Nextcloud maintenance mode...
+2026-07-31 17:09:28 [DEBUG  ] Running: nextcloud.occ maintenance:mode --on
+2026-07-31 17:09:28 [DEBUG  ] Maintenance mode enabled
+2026-07-31 17:09:28 [INFO   ] Maintenance mode enabled
+2026-07-31 17:09:28 [DEBUG  ] Consistency boundary took: (0s)
+
+2026-07-31 17:09:28 [INFO   ] ============================================================
+2026-07-31 17:09:28 [INFO   ] Database export (Snap)
+2026-07-31 17:09:28 [INFO   ] ============================================================
+2026-07-31 17:09:28 [INFO   ] Running Nextcloud database export...
+2026-07-31 17:09:36 [INFO   ] Database export created: /var/snap/nextcloud/common/backups/20260731-170929
+2026-07-31 17:09:36 [DEBUG  ] Database export (Snap) took: (8s)
+
+2026-07-31 17:09:36 [INFO   ] ============================================================
+2026-07-31 17:09:36 [INFO   ] Restic backup
+2026-07-31 17:09:36 [INFO   ] ============================================================
+2026-07-31 17:09:37 [INFO   ] Restic repository already initialized
+2026-07-31 17:09:37 [INFO   ] Unlocking repository...
+2026-07-31 17:09:37 [INFO   ] Repository unlocked
+2026-07-31 17:09:37 [INFO   ] Starting Restic backup...
