@@ -10,6 +10,7 @@ source "${BACKUP_BASE_DIR}/lib/common.sh"
 main() {
   START_TIME=$(date +%s)
   SNAPSHOT_ID=""
+  notifier_start
   common_init
 
   trap nextcloud_cleanup EXIT
@@ -56,6 +57,7 @@ main() {
   export END_TIME=$(date +%s)
   export DURATION=$((END_TIME - START_TIME))
   export SNAPSHOT_ID="$(restic_get_latest_snapshot)"
+  notifier_success "Backup completed successfully" "$SNAPSHOT_ID" "$DURATION"
   log_summary
   restic_get_stats
 }

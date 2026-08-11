@@ -6,10 +6,12 @@
 
 # Strict mode (IMPORTANT for production scripts)
 set -Eeo pipefail
-DRY_RUN=false
+
 # ----------------------------
 # Project base paths
 # ----------------------------
+today=$(date +%F)
+
 export BACKUP_LIB_DIR="${BACKUP_BASE_DIR}/lib"
 export BACKUP_BIN_DIR="${BACKUP_BASE_DIR}/bin"
 export BACKUP_TEST_DIR="${BACKUP_BASE_DIR}/tests"
@@ -18,7 +20,7 @@ export BACKUP_CONFIG_DIR="${BACKUP_BASE_DIR}/config"
 export BACKUP_CONFIG_FILE="${BACKUP_CONFIG_DIR}/backup.conf"
 
 export BACKUP_LOG_DIR="${BACKUP_BASE_DIR}/log"
-export BACKUP_LOG_FILE="${BACKUP_LOG_DIR}/backup-$(date +%F).log"
+export BACKUP_LOG_FILE="${BACKUP_LOG_DIR}/backup-${today}.log"
 export LOG_LEVEL="${LOG_LEVEL:-INFO}"
 
 export BACKUP_STATE_DIR="."
@@ -35,11 +37,6 @@ source "${BACKUP_LIB_DIR}/drive.sh"
 source "${BACKUP_LIB_DIR}/nextcloud.sh"
 source "${BACKUP_LIB_DIR}/nextcloud_backup.sh"
 source "${BACKUP_LIB_DIR}/restic.sh"
-# Configuration (will evolve in next step)
-# source "${BACKUP_LIB_DIR}/config.sh"
-
-# Utilities (placeholder for now)
-# source "${BACKUP_LIB_DIR}/utils.sh"
 
 # ----------------------------
 # Initialize system directories
