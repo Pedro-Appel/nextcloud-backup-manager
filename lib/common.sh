@@ -37,6 +37,7 @@ source "${BACKUP_LIB_DIR}/drive.sh"
 source "${BACKUP_LIB_DIR}/nextcloud.sh"
 source "${BACKUP_LIB_DIR}/nextcloud_backup.sh"
 source "${BACKUP_LIB_DIR}/restic.sh"
+source "${BACKUP_LIB_DIR}/notifier.sh"
 
 # ----------------------------
 # Initialize system directories
