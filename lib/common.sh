@@ -79,6 +79,7 @@ common_init() {
   log_debug "Config loaded: $CONFIG_FILE"
   log_debug "Backup mount: $BACKUP_MOUNT"
   log_debug "Loading notifier..."
+  notifier_init
   log_section "Initialization"
   nextcloud_backup_init
   log_debug "NextCloud Backup initiated"
