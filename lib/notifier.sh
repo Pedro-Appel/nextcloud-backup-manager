@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -eo pipefail
+set -euo pipefail
 
 NOTIFIER_JAR="${NOTIFIER_DIR}/home-lab-notifier.jar"
 

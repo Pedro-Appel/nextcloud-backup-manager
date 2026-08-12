@@ -37,7 +37,6 @@ source "${BACKUP_LIB_DIR}/drive.sh"
 source "${BACKUP_LIB_DIR}/nextcloud.sh"
 source "${BACKUP_LIB_DIR}/nextcloud_backup.sh"
 source "${BACKUP_LIB_DIR}/restic.sh"
-source "${BACKUP_LIB_DIR}/notifier.sh"
 
 # ----------------------------
 # Initialize system directories
@@ -60,6 +59,10 @@ common_init_logging() {
   log_init
 }
 
+notifier_init() {
+  source "${BACKUP_LIB_DIR}/notifier.sh"
+}
+
 # ----------------------------
 # Main initializer
 # ----------------------------
@@ -75,6 +78,7 @@ common_init() {
   log_debug "Log level: $LOG_LEVEL"
   log_debug "Config loaded: $CONFIG_FILE"
   log_debug "Backup mount: $BACKUP_MOUNT"
+  log_debug "Loading notifier..."
   log_section "Initialization"
   nextcloud_backup_init
   log_debug "NextCloud Backup initiated"
