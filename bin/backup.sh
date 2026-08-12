@@ -10,8 +10,8 @@ source "${BACKUP_BASE_DIR}/lib/common.sh"
 main() {
   START_TIME=$(date +%s)
   SNAPSHOT_ID=""
-  notifier_start
   common_init
+  notifier_start
 
   trap nextcloud_cleanup EXIT
   log_banner
