@@ -1,158 +1,133 @@
-# Backup Service (Home LAB) Implementation Plan
+# nextcloud-backup-manager
 
-## Goal
+Automated backup service for an Ubuntu Server running Nextcloud (Snap). Manages drive validation,
+Nextcloud maintenance mode, MySQL database export, Restic snapshots, retention, and notifications.
 
-Build a modular backup service for the Ubuntu Server hosting Nextcloud
-that is reliable, testable and fully automatable with systemd timers.
+Version: 1.0.0
 
-## Objectives
+## Features
 
-- External drive management and monitoring
-- Nextcloud maintenance mode management
-- PostgreSQL dump
-- Restic backup management
-- Incremental snapshots only
-- Backup verification
-- Structured logging
+- External drive mount validation and writability/space checks
+- Nextcloud maintenance mode lifecycle via `nextcloud.occ`
+- MySQL database dump using the bundled Snap mysqldump
+- Restic backup with configurable retention policy
+- Dry-run mode (`DRY_RUN=true`) for safe rehearsals
+- Structured, colour-coded logging to both console and a daily log file
+- External notification via a Java notifier JAR (START / SUCCESS / FAILURE events)
+- Automatic cleanup trap — maintenance mode is always disabled on exit
 
-## Future Enhancements
+## Requirements
 
-- Nextcloud health checks
-- Tailscale health checks
-- Notifications
-- Offsite replication
-- Restore validation
+- Ubuntu Server with Nextcloud installed as a Snap package
+- `restic` installed and on `$PATH`
+- `jq` installed and on `$PATH`
+- Java runtime (for the notifier)
+- Root privileges to mount drives and run `nextcloud.occ`
 
 ## Directory Layout
 
-```text
-/opt/backup-service/
+```
+nextcloud-backup-manager/
 ├── bin/
+│   └── backup.sh          # Entry point / orchestrator
 ├── lib/
+│   ├── common.sh           # Bootstrap: path exports, library loader, init sequence
+│   ├── config.sh           # Config file loader and validator
+│   ├── logging.sh          # Structured logger (DEBUG/INFO/SUCCESS/WARN/ERROR)
+│   ├── utils.sh            # Shared helpers (require_*, create_directory, is_dry_run)
+│   ├── drive.sh            # Drive mount, writability, and space validation
+│   ├── nextcloud.sh        # Nextcloud OCC wrapper and maintenance mode
+│   ├── nextcloud_backup.sh # Nextcloud DB export via nextcloud.export
+│   ├── database.sh         # MySQL dump via Snap-bundled mysqldump
+│   ├── restic.sh           # Restic init, backup, retention, stats
+│   └── notifier.sh         # Java JAR notifier (START/SUCCESS/FAILURE)
+├── config/
+│   └── backup.conf         # Runtime configuration (see Configuration below)
+├── tests/
+│   ├── test-logging.sh     # Logging module smoke test
+│   └── test-database.sh    # Database config-load smoke test
+├── VERSION.md
 └── README.md
-
-/etc/backup-service/
-└── backup.conf
-
-/var/log/backup-service/
-
-/var/lib/backup-service/
 ```
 
-## Modules
-
-### logging.sh
-
-Responsibilities: - Log levels - File logging - Journal integration
-
-### drive.sh
-
-Responsibilities: - Mount by UUID - Verify mount - Verify writable -
-Check free space - SMART health
-
-### nextcloud.sh
-
-Responsibilities: - Enable maintenance mode - Disable maintenance mode -
-Verify installation
-
-### postgres.sh
-
-Responsibilities: - Dump database - Compress dump - Verify dump -
-Cleanup temporary files
-
-### restic.sh
-
-Responsibilities: - Initialize repository - Backup - Retention -
-Snapshot verification - Repository check - Restore helpers
-
-## Backup Workflow
-
-1.  Load configuration
-2.  Initialize logging
-3.  Verify external drive
-4.  Verify free space
-5.  Verify drive health
-6.  Enable Nextcloud maintenance
-7.  Dump PostgreSQL
-8.  Run Restic backup
-9.  Apply retention policy
-10. Verify snapshot
-11. Disable maintenance mode
-12. Cleanup
-13. Finish
-
-A cleanup trap should always disable maintenance mode and remove
-temporary files.
+Logs are written to `<project_root>/log/backup-YYYY-MM-DD.log`.  
+Temporary database dumps land in `<project_root>/database/` and are removed after the Restic backup.
 
 ## Configuration
 
-Configuration will be stored in `/etc/backup-service/backup.conf`.
+Copy `config/backup.conf` and adjust as needed. All variables are exported into the environment
+at startup by `config.sh`.
 
-Items include: - Mount point - Drive UUID - Restic repository - Restic
-password file - Nextcloud path - PostgreSQL settings - Retention
-policy - Log directory
+```bash
+# Log verbosity: DEBUG | INFO | WARN | ERROR
+LOG_LEVEL=INFO
 
-## Milestones
+# External backup drive
+BACKUP_MOUNT=/mnt/backup
+BACKUP_DEVICE_UUID=<uuid>          # blkid UUID of the backup drive
 
-### Phase 1
+# Restic
+RESTIC_REPOSITORY=/mnt/backup/restic
+RESTIC_PASSWORD_FILE=/etc/backup-service/restic.pass
+RESTIC_CACHE_DIR=/var/cache/backup
+RESTIC_RETENTION_DAILY=7
+RESTIC_RETENTION_WEEKLY=4
+RESTIC_RETENTION_MONTHLY=12
 
-Project scaffolding and logging
+# Nextcloud (Snap layout defaults; override only if non-standard)
+NEXTCLOUD_DATA_DIR=/mnt/nas/nextcloud/data
+NEXTCLOUD_CONFIG_DIR=/var/snap/nextcloud/current/nextcloud/config
+NEXTCLOUD_OCC=/snap/bin/nextcloud.occ
+NEXTCLOUD_OCC_TIMEOUT=30           # seconds before occ calls time out
 
-### Phase 2
+# Notifier
+NOTIFIER_DIR=/opt/home-lab/notifier
+```
 
-External drive mounting and monitoring
+## Usage
 
-### Phase 3
+```bash
+# Normal run (requires root)
+sudo bash bin/backup.sh
 
-Nextcloud maintenance module
+# Dry run — no writes, no maintenance mode toggle, no real Restic backup
+sudo DRY_RUN=true bash bin/backup.sh
 
-### Phase 4
+# Override log level at runtime
+sudo LOG_LEVEL=DEBUG bash bin/backup.sh
+```
 
-PostgreSQL backup module
+## Backup Workflow
 
-### Phase 5
+1. Bootstrap (`common_init`) — directories, config, logger, notifier, Restic, Nextcloud
+2. Send **START** notification
+3. Register `nextcloud_cleanup` as EXIT trap (ensures maintenance mode is always disabled)
+4. **Environment Validation** — verify `nextcloud.occ` is present, mount/writability/space check
+5. **Consistency boundary** — enable Nextcloud maintenance mode
+6. **Database export** — `nextcloud.export -b` creates a Snap-native DB export
+7. **Restic backup** — init repo if missing, unlock, backup `data/`, `config/`, and the DB export
+8. **Retention policy** — `restic forget --prune` with daily/weekly/monthly limits
+9. **Cleanup exports** — remove the Nextcloud export files from `NEXTCLOUD_BACKUP_DIR`
+10. **End consistency boundary** — disable maintenance mode
+11. Send **SUCCESS** notification with snapshot ID and duration
+12. Print summary to log
 
-Restic module
+On any failure the EXIT trap fires, disabling maintenance mode if it is still active.
 
-### Phase 6
+## Running Tests
 
-Main orchestrator
+Tests are standalone scripts that source the library directly. Set `BACKUP_BASE_DIR` first:
 
-### Phase 7
+```bash
+export BACKUP_BASE_DIR="$(pwd)"
+bash tests/test-logging.sh
+bash tests/test-database.sh
+```
 
-Systemd service and timer
+## Future Enhancements
 
-### Phase 8
-
-Health routines and enhancements
-
-## Phase 2 Detailed Tasks
-
-- Identify external drive
-- Record UUID
-- Format if required
-- Create mount point
-- Configure `/etc/fstab`
-- Test automatic mounting
-- Verify permissions
-- Verify SMART
-- Test read/write
-- Simulate missing drive
-
-## Testing Strategy
-
-Each module must be tested independently before integration.
-
-After integration: - Successful backup - Failed backup - Missing drive -
-Database failure - Restic failure - Automatic cleanup
-
-## Logging
-
-Every operation should include: - Timestamp - Level - Module - Message
-
-## Success Criteria
-
-The project is complete when: - A daily unattended backup runs
-successfully. - Only incremental snapshots are stored. - Logs clearly
-show every stage. - Failures leave the system in a consistent state. - A
-full restore procedure has been documented and tested.
+- Systemd service unit and timer
+- Nextcloud and Tailscale health checks
+- `notifier_failure` wired into the EXIT trap
+- Offsite replication
+- Restore validation procedure
