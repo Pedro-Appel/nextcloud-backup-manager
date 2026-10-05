@@ -1,0 +1,11 @@
+[Unit]
+Description=Nextcloud Backup Manager
+After=network.target
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/opt/backup
+ExecStart=/usr/bin/java -jar /opt/backup/nextcloud-backup-manager.jar
+StandardOutput=journal
+StandardError=journal

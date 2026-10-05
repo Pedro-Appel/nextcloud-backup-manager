@@ -2,3 +2,7 @@ backup.log
 /logs
 /database
 .idea
+build
+.vscode
+.gradle
+LOG_DIR_IS_UNDEFINED

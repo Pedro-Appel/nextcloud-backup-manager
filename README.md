@@ -97,6 +97,43 @@ sudo DRY_RUN=true bash bin/backup.sh
 sudo LOG_LEVEL=DEBUG bash bin/backup.sh
 ```
 
+## Java Build
+
+The Java CLI is built with the Gradle wrapper and packaged as a self-contained JAR:
+
+```bash
+./gradlew shadowJar
+```
+
+The artifact is `build/libs/nextcloud-backup-manager-1.0.0-all.jar`. In deployment, keep the JAR
+at the project root and the configuration at `config/backup.conf` under that same root.
+
+## Running (Java)
+
+```bash
+# Normal run (requires root and the configured system integrations)
+sudo java -jar build/libs/nextcloud-backup-manager-1.0.0-all.jar
+
+# Rehearse the complete workflow without external commands
+sudo java -jar build/libs/nextcloud-backup-manager-1.0.0-all.jar --dry-run
+
+# Enable debug logging through backup.conf (LOG_LEVEL=DEBUG)
+sudo java -jar build/libs/nextcloud-backup-manager-1.0.0-all.jar
+```
+
+The Java CLI reads `config/backup.conf` relative to the deployment directory. Environment
+`DRY_RUN=true` and the `--dry-run` option enable simulation.
+
+## Testing
+
+```bash
+./gradlew test
+./gradlew integrationTest
+```
+
+The integration test runs the complete workflow with dry-run enabled and writes only under a
+temporary project directory.
+
 ## Backup Workflow
 
 1. Bootstrap (`common_init`) — directories, config, logger, notifier, Restic, Nextcloud
