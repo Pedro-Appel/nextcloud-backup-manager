@@ -106,7 +106,7 @@ class BackupLoggerTest {
     @Test
     void logBannerContainsProjectName() {
         BackupLogger.logBanner();
-        assertTrue(capturedMessages().stream().anyMatch(m -> m.contains("nextcloud-backup-manager")));
+        assertTrue(capturedMessages().stream().anyMatch(m -> m.contains("CoffeeBabe")));
     }
 
     @Test
