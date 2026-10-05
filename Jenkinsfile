@@ -103,8 +103,8 @@ pipeline {
                     sh """
                         ssh ${DEPLOY_HOST} '\
                             cd ${DEPLOY_PATH} && \
-                            chmod 0644 nextcloud-backup-manager.jar /opt/backup/nextcloud-backup-manager.jar  && \
-                            chmod 0600 backup.conf /opt/backup/config/backup.conf'
+                            chmod 0644 nextcloud-backup-manager.jar && \
+                            chmod 0600 backup.conf'
                     """
                 }
             }
