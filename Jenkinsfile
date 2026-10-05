@@ -7,14 +7,6 @@ pipeline {
         buildDiscarder(logRotator(numToKeepStr: '10'))
     }
 
-    parameters {
-        booleanParam(
-            name: 'ENABLE_PROCESS',
-            defaultValue: false,
-            description: 'Activate timed process to run backup automatically (requires systemd timer)'
-        )
-    }
-
     environment {
         DEPLOY_HOST = 'staging-deploy'          // SSH alias, see step 5
         DEPLOY_PATH = '~/staging/backup-manager'
@@ -111,25 +103,8 @@ pipeline {
                     sh """
                         ssh ${DEPLOY_HOST} '\
                             cd ${DEPLOY_PATH} && \
-                            sudo install -d /opt/backup/config  && \
-                            sudo install -m 0644 nextcloud-backup-manager.jar /opt/backup/nextcloud-backup-manager.jar  && \
-                            sudo install -m 0600 backup.conf /opt/backup/config/backup.conf'
-                    """
-                }
-            }
-        }
-
-        stage('Enable process') {
-            when { expression { params.ENABLE_PROCESS } }
-            steps {
-                sshagent(credentials: ['sudo-ssh-key']) {
-                    sh """
-                        ssh ${DEPLOY_HOST} '\
-                            cd ${DEPLOY_PATH} && \
-                            sudo install -m 0644 nextcloud-backup.service /etc/systemd/system/ && \
-                            sudo install -m 0644 nextcloud-backup.timer /etc/systemd/system/ && \
-                            sudo systemctl daemon-reload && \
-                            sudo systemctl enable --now nextcloud-backup.timer'
+                            chmod 0644 nextcloud-backup-manager.jar /opt/backup/nextcloud-backup-manager.jar  && \
+                            chmod 0600 backup.conf /opt/backup/config/backup.conf'
                     """
                 }
             }
@@ -146,9 +121,7 @@ pipeline {
 
     post {
         success {
-            echo params.ENABLE_PROCESS
-                ? "Process of backup enabled (#${env.BUILD_NUMBER})"
-                : "Staging candidate validated, deployed, and merged (#${env.BUILD_NUMBER}); timer was not changed."
+            echo "Staging candidate validated, deployed, and merged (#${env.BUILD_NUMBER}); timer was not changed."
         }
         aborted {
             echo "Merge/deploy was aborted, or the approval window timed out."
