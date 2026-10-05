@@ -2,12 +2,14 @@ package dev.irattiz.backup.logging;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.joran.JoranConfigurator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
+import java.net.URL;
 
 /**
  * Façade over SLF4J + Logback.
@@ -55,12 +57,21 @@ public final class BackupLogger {
     public static void configure(Level level, Path logDir) {
         LoggerContext ctx = (LoggerContext) LoggerFactory.getILoggerFactory();
 
-        // Inject LOG_DIR property so logback.xml can resolve ${LOG_DIR}
-        ctx.putProperty("LOG_DIR", logDir.toAbsolutePath().toString());
-
-        // Set root logger level
-        ch.qos.logback.classic.Logger root = ctx.getLogger(ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME);
-        root.setLevel(level);
+        try {
+            URL config = BackupLogger.class.getClassLoader().getResource("logback.xml");
+            if (config != null) {
+                ctx.reset();
+                ctx.putProperty("LOG_DIR", logDir.toAbsolutePath().toString());
+                ctx.putProperty("LOG_LEVEL", level.toString());
+                JoranConfigurator configurator = new JoranConfigurator();
+                configurator.setContext(ctx);
+                configurator.doConfigure(config);
+            }
+            ch.qos.logback.classic.Logger root = ctx.getLogger(ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME);
+            root.setLevel(level);
+        } catch (ch.qos.logback.core.joran.spi.JoranException e) {
+            throw new IllegalStateException("Cannot configure logging", e);
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -72,6 +83,7 @@ public final class BackupLogger {
      * Output format: {@code === <name> ===}
      */
     public static void logSection(String name) {
+        log.info("----------------------------------------------------------");
         log.info("=== {} ===", name);
     }
 
@@ -88,28 +100,32 @@ public final class BackupLogger {
     }
 
     // -------------------------------------------------------------------------
-    // Banner and summary (added fully in Task 16; stubs here for compilation)
+    // Banner and summary
     // -------------------------------------------------------------------------
 
     /**
      * Prints the ASCII art startup banner.
-     * Full implementation in Task 16.
      */
     public static void logBanner() {
         log.info("==========================================================");
-        log.info("  nextcloud-backup-manager");
+        log.info("  _   _           _    _                 _           _");
+        log.info(" | \\ | | _____  _| |_ | | ___  _   _  __| |         | |");
+        log.info(" |  \\| |/ _ \\/ _` | __|| |/ _ \\| | | |/ _` |      _| |");
+        log.info(" | |\\  |  __/ (_| | |_ | | (_) | |_| | (_| |     |_  |");
+        log.info(" |_| \\_|\\___|\\__,_|\\__||_|\\___/ \\__,_|\\__,_|       |_|");
+        log.info("             nextcloud-backup-manager");
         log.info("==========================================================");
     }
 
     /**
      * Logs the end-of-run summary.
-     * Full implementation in Task 16.
      */
     public static void logSummary(String snapshotId, Duration duration, String hostname) {
         log.info("----------------------------------------------------------");
         log.info("  Snapshot : {}", snapshotId != null ? snapshotId : "(dry-run)");
         log.info("  Duration : {}", formatDuration(duration));
         log.info("  Host     : {}", hostname);
+        log.info("  Finished : {}", java.time.LocalDateTime.now());
         log.info("----------------------------------------------------------");
     }
 

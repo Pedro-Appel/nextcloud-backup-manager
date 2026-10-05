@@ -37,6 +37,10 @@ public class NextcloudService {
      * @throws BackupException if the binary is missing or not executable
      */
     public void check() throws BackupException {
+        if (config.isDryRun()) {
+            log.info("[DRY-RUN] Skipping nextcloud.occ executable check");
+            return;
+        }
         if (!Files.isExecutable(config.getNextcloudOcc())) {
             throw new BackupException(
                     "nextcloud.occ is not executable: " + config.getNextcloudOcc());

@@ -41,6 +41,7 @@ public class BackupConfig {
 
     private final Properties props;
     private final Function<String, String> envSupplier;
+    private final Path configFile;
 
     /**
      * Constructs a BackupConfig by loading the given properties file.
@@ -63,6 +64,7 @@ public class BackupConfig {
      */
     public BackupConfig(Path configFile, Function<String, String> envSupplier) throws BackupException {
         this.envSupplier = envSupplier;
+        this.configFile = configFile.toAbsolutePath().normalize();
         this.props = new Properties();
         load(configFile);
         applySnapDefaults();
@@ -153,6 +155,13 @@ public class BackupConfig {
 
     public Path getBackupMount() {
         return Path.of(props.getProperty("BACKUP_MOUNT"));
+    }
+
+    public Path getProjectRoot() {
+        Path configDir = configFile.getParent();
+        return configDir != null && configDir.getFileName() != null
+                && configDir.getFileName().toString().equals("config")
+                ? configDir.getParent() : configDir;
     }
 
     public String getBackupDeviceUuid() {

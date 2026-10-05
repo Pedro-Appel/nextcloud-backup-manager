@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -97,6 +98,49 @@ public class ShellCommand {
             return "";
         }
         return (String) execute(args, true);
+    }
+
+    /** Streams command stdout directly into the supplied output stream. */
+    public void runTo(OutputStream output, String... args) throws BackupException {
+        String commandLine = redactSensitiveArgs(args);
+        if (dryRun) {
+            log.info("[DRY-RUN] Would run: {}", commandLine);
+            return;
+        }
+        log.debug("Running: {}", commandLine);
+        Process process;
+        try {
+            process = new ProcessBuilder(List.of(args)).start();
+        } catch (IOException e) {
+            throw new BackupException("Cannot start command: " + commandLine, e);
+        }
+        Thread errorDrainer = new Thread(() -> {
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) log.debug(line);
+            } catch (IOException ignored) { }
+        }, "shell-command-stderr");
+        errorDrainer.setDaemon(true);
+        errorDrainer.start();
+        try {
+            process.getInputStream().transferTo(output);
+            int exitCode = waitFor(process, commandLine);
+            errorDrainer.join(500);
+            if (exitCode != 0) throw new BackupException("Command failed (exit " + exitCode + "): " + commandLine);
+        } catch (IOException e) {
+            process.destroyForcibly();
+            throw new BackupException("Failed streaming command output: " + commandLine, e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            process.destroyForcibly();
+            throw new BackupException("Command interrupted: " + commandLine, e);
+        }
+    }
+
+    private String redactSensitiveArgs(String[] args) {
+        return java.util.Arrays.stream(args)
+                .map(arg -> arg.startsWith("-p") && arg.length() > 2 ? "-p******" : arg)
+                .collect(java.util.stream.Collectors.joining(" "));
     }
 
     // -------------------------------------------------------------------------

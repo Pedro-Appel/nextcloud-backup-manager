@@ -113,6 +113,10 @@ public class DriveService {
      * Called from BackupApplication.
      */
     public void validate() throws BackupException {
+        if (config.isDryRun()) {
+            log.info("[DRY-RUN] Skipping backup drive mount, writability, and space checks");
+            return;
+        }
         if (!isMounted()) {
             log.info("Backup drive not mounted — mounting now");
             mount();

@@ -102,4 +102,22 @@ class BackupLoggerTest {
         assertTrue(logbackLogger.isDebugEnabled(),
                 "After configure(DEBUG, ...) the logger should have DEBUG enabled");
     }
+
+    @Test
+    void logBannerContainsProjectName() {
+        BackupLogger.logBanner();
+        assertTrue(capturedMessages().stream().anyMatch(m -> m.contains("nextcloud-backup-manager")));
+    }
+
+    @Test
+    void logSummaryContainsSnapshotId() {
+        BackupLogger.logSummary("deadbeef", Duration.ofSeconds(2), "test-host");
+        assertTrue(capturedMessages().stream().anyMatch(m -> m.contains("deadbeef")));
+    }
+
+    @Test
+    void logSummaryFormatsDuration() {
+        BackupLogger.logSummary("id", Duration.ofSeconds(135), "test-host");
+        assertTrue(capturedMessages().stream().anyMatch(m -> m.contains("2m 15s")));
+    }
 }

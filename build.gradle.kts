@@ -46,6 +46,8 @@ tasks.test {
 tasks.register<Test>("integrationTest") {
     description = "Runs integration tests."
     group = "verification"
+    dependsOn(tasks.shadowJar)
+    systemProperty("applicationJar", tasks.shadowJar.get().archiveFile.get().asFile.absolutePath)
     useJUnitPlatform {
         includeTags("integration")
     }

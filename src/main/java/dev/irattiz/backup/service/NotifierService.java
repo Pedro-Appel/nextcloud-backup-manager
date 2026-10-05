@@ -37,22 +37,22 @@ public class NotifierService {
 
     /** Fires the START event. */
     public void sendStart() throws BackupException {
-        validate();
         if (config.isDryRun()) {
             log.info("[DRY-RUN] Would send notifier event: START");
             return;
         }
+        validate();
         shell.run(buildArgs("START", null, null).toArray(new String[0]));
     }
 
     /** Fires the SUCCESS event with snapshot ID and duration. */
     public void sendSuccess(String snapshotId, Duration duration) throws BackupException {
-        validate();
         if (config.isDryRun()) {
             log.info("[DRY-RUN] Would send notifier event: SUCCESS snapshot={} duration={}s",
                     snapshotId, duration.toSeconds());
             return;
         }
+        validate();
         List<String> args = buildArgs("SUCCESS", snapshotId, duration);
         shell.run(args.toArray(new String[0]));
     }
@@ -64,11 +64,11 @@ public class NotifierService {
      */
     public void sendFailure(String message, String snapshotId, Duration duration)
             throws BackupException {
-        validate();
         if (config.isDryRun()) {
             log.info("[DRY-RUN] Would send notifier event: FAILURE message={}", message);
             return;
         }
+        validate();
         List<String> args = buildArgs("FAILURE", snapshotId, duration);
         args.add("--message");
         args.add(message);

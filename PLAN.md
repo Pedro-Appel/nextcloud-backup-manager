@@ -537,7 +537,7 @@ object.
 
 ---
 
-### Task 13: `BackupApplication` — full orchestration
+### Task 13: `BackupApplication` — full orchestration ✅
 
 **Objective**
 Implement the complete backup workflow in `BackupApplication.main()`, mirroring the phase
@@ -579,7 +579,7 @@ sequence in `bin/backup.sh`.
 
 ---
 
-### Task 14: End-to-end dry-run smoke test
+### Task 14: End-to-end dry-run smoke test ✅
 
 **Objective**
 Run the assembled fat JAR in dry-run mode against a real (local) config and confirm that the
@@ -621,7 +621,7 @@ version, add the `--dry-run` CLI flag, and produce deployment artefacts.
 
 ---
 
-### Task 15: `DatabaseService`
+### Task 15: `DatabaseService` ✅
 
 **Objective**
 Implement the direct MySQL dump path as a supplementary service (not in the default workflow).
@@ -658,7 +658,7 @@ Maps to `lib/database.sh`.
 
 ---
 
-### Task 16: Log formatting parity
+### Task 16: Log formatting parity ✅
 
 **Objective**
 Align the Java log output with the Bash version: startup banner, section headers with timing,
@@ -691,7 +691,7 @@ DRY_RUN=true java -jar build/libs/nextcloud-backup-manager-1.0.0-all.jar
 
 ---
 
-### Task 17: `--dry-run` CLI flag
+### Task 17: `--dry-run` CLI flag ✅
 
 **Objective**
 Allow `--dry-run` to be passed as a command-line argument as an alternative to the `DRY_RUN`
@@ -764,6 +764,9 @@ timer.
 
 **Acceptance tests:** Manual — `systemd-analyze verify` on the target Ubuntu server.
 
+**Status:** Deployment files and documentation are present. The target Ubuntu verification is
+still pending because this development environment does not provide `systemd-analyze`.
+
 **Expected results**
 - `README.md` contains Java build and run sections.
 - `deploy/` directory contains `.service`, `.timer`, and `README.md`.
@@ -795,11 +798,11 @@ cat deploy/nextcloud-backup.timer
 | ✅ 10 | 2 | `ResticService` | 8 | 47 |
 | ✅ 11 | 3 | `NotifierService` | 5 | 52 |
 | ✅ 12 | 3 | `BackupContext` (services) | 2 | 54 |
-| 13 | 3 | `BackupApplication` orchestration | 3 | 57 |
-| 14 | 3 | Integration smoke test | 1 | 58 |
-| 15 | 4 | `DatabaseService` | 4 | 62 |
-| 16 | 4 | Log formatting parity | 3 | 65 |
-| 17 | 4 | `--dry-run` CLI flag | 2 | 67 |
+| ✅ 13 | 3 | `BackupApplication` orchestration | 3 | 57 |
+| ✅ 14 | 3 | Integration smoke test | 1 | 58 |
+| ✅ 15 | 4 | `DatabaseService` | 4 | 62 |
+| ✅ 16 | 4 | Log formatting parity | 3 | 65 |
+| ✅ 17 | 4 | `--dry-run` CLI flag | 2 | 67 |
 | 18 | 4 | README + systemd units | 0 | 67 |
 
 **Total: 67 automated tests across 18 tasks.**
