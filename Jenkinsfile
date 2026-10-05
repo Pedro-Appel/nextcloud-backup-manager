@@ -77,9 +77,16 @@ pipeline {
 
         stage('Prepare environment file') {
             steps {
+                echo 'Binding backup environment credential'
                 withCredentials([file(credentialsId: 'backup-env-file', variable: 'ENVFILE')]) {
-                    sh 'cp "$ENVFILE" backup.conf'
-                    sh 'chmod 600 backup.conf'
+                    echo 'Credential bound; copying environment file'
+                    sh '''
+                        set -eux
+                        test -f "$ENVFILE"
+                        cp "$ENVFILE" backup.conf
+                        chmod 600 backup.conf
+                        test -s backup.conf
+                    '''
                 }
             }
         }
