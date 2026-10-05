@@ -118,6 +118,7 @@ pipeline {
                 sshagent(credentials: ['sudo-ssh-key']) {
                     sh """
                         ssh ${DEPLOY_HOST} '\
+                            cd ${DEPLOY_PATH} && \
                             sudo install -m 0644 nextcloud-backup.service /etc/systemd/system/ && \
                             sudo install -m 0644 nextcloud-backup.timer /etc/systemd/system/ && \
                             sudo systemctl daemon-reload && \
