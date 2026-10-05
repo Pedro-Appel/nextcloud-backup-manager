@@ -28,7 +28,7 @@ dependencies {
 
     // JSON parsing (for Restic snapshot output)
     implementation("jakarta.json:jakarta.json-api:2.1.3")
-    runtimeOnly("org.glassfish:jakarta.json:2.0.1")
+    implementation("org.eclipse.parsson:parsson:1.1.7")
 
     // Testing
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.5")
