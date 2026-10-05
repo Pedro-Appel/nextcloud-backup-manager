@@ -29,7 +29,7 @@ Goal: establish a compiling, testable project with the two cross-cutting foundat
 
 ---
 
-### Task 1: Gradle project initialisation
+### Task 1: Gradle project initialisation ✅
 
 **Objective**
 Create a minimal but complete Gradle 8 Kotlin DSL project that compiles Java 21 source and
@@ -70,7 +70,7 @@ echo "Exit code: $?"   # must print 0
 
 ---
 
-### Task 2: `BackupException`
+### Task 2: `BackupException` ✅
 
 **Objective**
 Introduce the single checked exception used throughout the application before any class that
@@ -98,7 +98,7 @@ throws it is written.
 
 ---
 
-### Task 3: `BackupConfig`
+### Task 3: `BackupConfig` ✅
 
 **Objective**
 Load, validate, and expose `config/backup.conf` as a typed Java object. This is the data
@@ -155,7 +155,7 @@ foundation that every service reads.
 
 ---
 
-### Task 4: Logging setup
+### Task 4: Logging setup ✅
 
 **Objective**
 Configure Logback with a console (colourised) appender and a daily rolling file appender.
@@ -196,7 +196,7 @@ Expose a `BackupLogger` façade so the rest of the codebase never imports Logbac
 
 ---
 
-### Task 5: `ShellCommand`
+### Task 5: `ShellCommand` ✅
 
 **Objective**
 Provide a reusable, testable wrapper around `ProcessBuilder` that all services use for every
@@ -244,7 +244,7 @@ external command. This is the most critical utility class — no service should 
 
 ---
 
-### Task 6: `BackupContext` skeleton
+### Task 6: `BackupContext` skeleton ✅
 
 **Objective**
 Wire `BackupConfig`, `BackupLogger`, and `ShellCommand` into a single context object that
@@ -289,7 +289,7 @@ mock `ShellCommand` so no real system calls are made.
 
 ---
 
-### Task 7: `DriveService`
+### Task 7: `DriveService` ✅
 
 **Objective**
 Implement drive mount validation: mount by UUID, writable check, space check. Maps 1-to-1 with
@@ -337,7 +337,7 @@ Implement drive mount validation: mount by UUID, writable check, space check. Ma
 
 ---
 
-### Task 8: `NextcloudService`
+### Task 8: `NextcloudService` ✅
 
 **Objective**
 Wrap `nextcloud.occ` calls with timeout support and implement maintenance mode toggling and the
@@ -379,7 +379,7 @@ shutdown-hook cleanup method. Maps to `lib/nextcloud.sh`.
 
 ---
 
-### Task 9: `NextcloudBackupService`
+### Task 9: `NextcloudBackupService` ✅
 
 **Objective**
 Implement the Snap-native database export and post-backup export cleanup. Maps to
@@ -417,7 +417,7 @@ Implement the Snap-native database export and post-backup export cleanup. Maps t
 
 ---
 
-### Task 10: `ResticService`
+### Task 10: `ResticService` ✅
 
 **Objective**
 Implement all Restic operations: repository init, unlock, backup, retention, snapshot ID
@@ -473,7 +473,7 @@ an end-to-end dry-run of the full backup workflow without touching any real exte
 
 ---
 
-### Task 11: `NotifierService`
+### Task 11: `NotifierService` ✅
 
 **Objective**
 Wrap the existing Java notifier JAR as a subprocess call. Maps to `lib/notifier.sh`.
@@ -508,7 +508,7 @@ Wrap the existing Java notifier JAR as a subprocess call. Maps to `lib/notifier.
 
 ---
 
-### Task 12: Wire services into `BackupContext`
+### Task 12: Wire services into `BackupContext` ✅ ✅
 
 **Objective**
 Add all services to `BackupContext` so `BackupApplication` can retrieve them through a single
@@ -783,18 +783,18 @@ cat deploy/nextcloud-backup.timer
 
 | Task | Phase | Class / Artefact | New Tests | Cumulative |
 |------|-------|------------------|-----------|------------|
-| 1 | 1 | Gradle build files | 0 | 0 |
-| 2 | 1 | `BackupException` | 2 | 2 |
-| 3 | 1 | `BackupConfig` | 7 | 9 |
-| 4 | 1 | `BackupLogger` + Logback | 3 | 12 |
-| 5 | 1 | `ShellCommand` | 6 | 18 |
-| 6 | 1 | `BackupContext` skeleton | 2 | 20 |
-| 7 | 2 | `DriveService` | 6 | 26 |
-| 8 | 2 | `NextcloudService` | 8 | 34 |
-| 9 | 2 | `NextcloudBackupService` | 5 | 39 |
-| 10 | 2 | `ResticService` | 8 | 47 |
-| 11 | 3 | `NotifierService` | 5 | 52 |
-| 12 | 3 | `BackupContext` (services) | 2 | 54 |
+| ✅ 1 | 1 | Gradle build files | 0 | 0 |
+| ✅ 2 | 1 | `BackupException` | 2 | 2 |
+| ✅ 3 | 1 | `BackupConfig` | 7 | 9 |
+| ✅ 4 | 1 | `BackupLogger` + Logback | 3 | 12 |
+| ✅ 5 | 1 | `ShellCommand` | 6 | 18 |
+| ✅ 6 | 1 | `BackupContext` skeleton | 2 | 20 |
+| ✅ 7 | 2 | `DriveService` | 6 | 26 |
+| ✅ 8 | 2 | `NextcloudService` | 8 | 34 |
+| ✅ 9 | 2 | `NextcloudBackupService` | 5 | 39 |
+| ✅ 10 | 2 | `ResticService` | 8 | 47 |
+| ✅ 11 | 3 | `NotifierService` | 5 | 52 |
+| ✅ 12 | 3 | `BackupContext` (services) | 2 | 54 |
 | 13 | 3 | `BackupApplication` orchestration | 3 | 57 |
 | 14 | 3 | Integration smoke test | 1 | 58 |
 | 15 | 4 | `DatabaseService` | 4 | 62 |
