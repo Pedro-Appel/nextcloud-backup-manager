@@ -46,6 +46,7 @@ class ResticServiceTest {
 
         when(config.getResticRepository()).thenReturn(repo);
         when(config.getResticPasswordFile()).thenReturn(passFile);
+        when(config.getResticTag()).thenReturn("nextcloud");
         when(config.getResticRetentionDaily()).thenReturn(7);
         when(config.getResticRetentionWeekly()).thenReturn(4);
         when(config.getResticRetentionMonthly()).thenReturn(12);
@@ -126,11 +127,14 @@ class ResticServiceTest {
 
         ArgumentCaptor<String[]> captor = ArgumentCaptor.forClass(String[].class);
         service.backup(List.of(Path.of("/data")));
-        verify(shell).run(captor.capture());
+        verify(shell).runLogged(captor.capture());
 
         List<String> args = Arrays.asList(captor.getValue());
         assertTrue(args.contains("--dry-run"),
                 "--dry-run must be present in backup args when isDryRun=true, got: " + args);
+        assertTrue(args.contains("--verbose=2"), "Missing --verbose=2");
+        assertEquals("nextcloud", args.get(args.indexOf("--tag") + 1));
+        assertEquals("host,tags", args.get(args.indexOf("--group-by") + 1));
     }
 
     // ------------------------------------------------------------------
@@ -143,7 +147,7 @@ class ResticServiceTest {
 
         ArgumentCaptor<String[]> captor = ArgumentCaptor.forClass(String[].class);
         service.backup(List.of(Path.of("/data")));
-        verify(shell).run(captor.capture());
+        verify(shell).runLogged(captor.capture());
 
         List<String> args = Arrays.asList(captor.getValue());
         assertFalse(args.contains("--dry-run"),
@@ -158,7 +162,7 @@ class ResticServiceTest {
     void applyRetentionPassesCorrectKeepArgs() throws BackupException {
         ArgumentCaptor<String[]> captor = ArgumentCaptor.forClass(String[].class);
         service.applyRetention();
-        verify(shell).run(captor.capture());
+        verify(shell).runLogged(captor.capture());
 
         List<String> args = Arrays.asList(captor.getValue());
         assertTrue(args.contains("--keep-daily"),   "Missing --keep-daily");
@@ -167,6 +171,9 @@ class ResticServiceTest {
         assertTrue(args.contains("4"),               "Missing weekly count");
         assertTrue(args.contains("--keep-monthly"), "Missing --keep-monthly");
         assertTrue(args.contains("12"),              "Missing monthly count");
+        assertTrue(args.contains("--verbose=2"),     "Missing --verbose=2");
+        assertEquals("nextcloud", args.get(args.indexOf("--tag") + 1));
+        assertEquals("host,tags", args.get(args.indexOf("--group-by") + 1));
     }
 
     // ------------------------------------------------------------------
@@ -177,10 +184,23 @@ class ResticServiceTest {
     void getLatestSnapshotIdParsesJson() throws BackupException {
         String json = "[{\"short_id\":\"abc1234\",\"id\":\"abc1234abcdef\"}]";
         when(shell.runCapture(eq("restic"), eq("snapshots"), eq("--json"), eq("--last"),
+                eq("--tag"), eq("nextcloud"),
+                eq("--group-by"), eq("host,tags"),
                 any(), any(), any(), any()))
                 .thenReturn(json);
 
         String id = service.getLatestSnapshotId();
         assertEquals("abc1234", id);
+    }
+
+    @Test
+    void getStatsFiltersLatestSnapshotByTag() throws BackupException {
+        service.getStats();
+
+        verify(shell).runCapture(
+                "restic", "stats", "latest",
+                "--tag", "nextcloud",
+                "--repo", config.getResticRepository().toString(),
+                "--password-file", config.getResticPasswordFile().toString());
     }
 }

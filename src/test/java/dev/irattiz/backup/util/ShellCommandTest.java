@@ -127,4 +127,15 @@ class ShellCommandTest {
                 "Expected the full command to appear in DEBUG log, got: " + messages
         );
     }
+
+    @Test
+    void runLoggedStreamsCommandOutputAtInfo() throws BackupException {
+        ShellCommand shell = new ShellCommand(false);
+        shell.runLogged("echo", "visible-progress");
+
+        assertTrue(listAppender.list.stream().anyMatch(event ->
+                        event.getLevel() == Level.INFO
+                                && event.getFormattedMessage().contains("visible-progress")),
+                "Expected command output at INFO, got: " + capturedMessages());
+    }
 }

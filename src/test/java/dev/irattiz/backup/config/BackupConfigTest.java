@@ -38,6 +38,7 @@ class BackupConfigTest {
         p.setProperty("BACKUP_DEVICE_UUID", "c2117669-a245-4682-805f-f94f81e27ee1");
         p.setProperty("RESTIC_REPOSITORY", "/mnt/backup/restic");
         p.setProperty("RESTIC_PASSWORD_FILE", "/etc/backup-service/restic.pass");
+        p.setProperty("RESTIC_TAG", "nextcloud");
         p.setProperty("RESTIC_RETENTION_DAILY", "7");
         p.setProperty("RESTIC_RETENTION_WEEKLY", "4");
         p.setProperty("RESTIC_RETENTION_MONTHLY", "12");
@@ -61,6 +62,7 @@ class BackupConfigTest {
         assertEquals("c2117669-a245-4682-805f-f94f81e27ee1", config.getBackupDeviceUuid());
         assertEquals(Path.of("/mnt/backup/restic"), config.getResticRepository());
         assertEquals(Path.of("/etc/backup-service/restic.pass"), config.getResticPasswordFile());
+        assertEquals("nextcloud", config.getResticTag());
         assertEquals(7, config.getResticRetentionDaily());
         assertEquals(4, config.getResticRetentionWeekly());
         assertEquals(12, config.getResticRetentionMonthly());
@@ -111,6 +113,16 @@ class BackupConfigTest {
         Path file = writeConfig(p);
 
         assertThrows(BackupException.class, () -> new BackupConfig(file));
+    }
+
+    @Test
+    void throwsOnBlankResticTag() throws Exception {
+        Properties p = validProps();
+        p.setProperty("RESTIC_TAG", "  ");
+        Path file = writeConfig(p);
+
+        BackupException ex = assertThrows(BackupException.class, () -> new BackupConfig(file));
+        assertTrue(ex.getMessage().contains("RESTIC_TAG"));
     }
 
     // ------------------------------------------------------------------

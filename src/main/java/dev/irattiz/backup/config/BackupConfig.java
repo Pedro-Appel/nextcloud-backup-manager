@@ -29,6 +29,7 @@ public class BackupConfig {
             "BACKUP_DEVICE_UUID",
             "RESTIC_REPOSITORY",
             "RESTIC_PASSWORD_FILE",
+            "RESTIC_TAG",
             "NEXTCLOUD_OCC",
             "NOTIFIER_DIR"
     );
@@ -174,6 +175,10 @@ public class BackupConfig {
 
     public Path getResticPasswordFile() {
         return Path.of(props.getProperty("RESTIC_PASSWORD_FILE"));
+    }
+
+    public String getResticTag() {
+        return props.getProperty("RESTIC_TAG").trim();
     }
 
     public Path getResticCacheDir() {

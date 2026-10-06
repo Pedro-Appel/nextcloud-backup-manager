@@ -154,8 +154,8 @@ Thin wrapper around the `restic` CLI:
 | `restic_repository_exists` | Probes with `restic snapshots` |
 | `restic_repository_init` | Runs `restic init` if repo doesn't exist yet |
 | `restic_unlock` | Removes stale locks |
-| `restic_backup` | Runs `restic backup`; adds `--dry-run` when `DRY_RUN=true` |
-| `restic_retention` | `restic forget --prune` with daily/weekly/monthly keep counts |
+| `restic_backup` | Runs verbose `restic backup`, tagged and grouped by `host,tags`; adds `--dry-run` when `DRY_RUN=true` |
+| `restic_retention` | Verbose `restic forget --prune` for the configured tag, grouped by `host,tags`, with daily/weekly/monthly keep counts |
 | `restic_get_latest_snapshot` | Returns the short ID of the most recent snapshot via `jq` |
 | `restic_get_stats` | Logs `restic stats latest` |
 
@@ -226,6 +226,7 @@ Variables used across modules. All are set by `config/backup.conf` unless noted.
 | `BACKUP_DEVICE_UUID` | `backup.conf` | blkid UUID used to locate the drive |
 | `RESTIC_REPOSITORY` | `backup.conf` | Path to the Restic repository |
 | `RESTIC_PASSWORD_FILE` | `backup.conf` | Path to the Restic password file |
+| `RESTIC_TAG` | `backup.conf` | Non-blank tag identifying the Nextcloud backup set |
 | `RESTIC_CACHE_DIR` | `backup.conf` | Restic cache directory |
 | `RESTIC_RETENTION_DAILY` | `backup.conf` | Daily snapshots to keep |
 | `RESTIC_RETENTION_WEEKLY` | `backup.conf` | Weekly snapshots to keep |
