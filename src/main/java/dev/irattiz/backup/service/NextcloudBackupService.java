@@ -129,7 +129,8 @@ public class NextcloudBackupService {
 
     private Set<Path> listFiles(Path dir) throws BackupException {
         try (Stream<Path> stream = Files.list(dir)) {
-            return stream.filter(Files::isRegularFile).collect(Collectors.toSet());
+            return stream.collect(Collectors.toSet());
+            // return stream.filter(Files::isRegularFile).collect(Collectors.toSet());
         } catch (IOException e) {
             throw new BackupException("Cannot list directory: " + dir, e);
         }
