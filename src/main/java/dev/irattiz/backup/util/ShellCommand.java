@@ -80,7 +80,23 @@ public class ShellCommand {
             log.info("[DRY-RUN] Would run: {}", String.join(" ", args));
             return;
         }
-        execute(args, false);
+        execute(args, false, false);
+    }
+
+    /**
+     * Executes a command, streaming its output to INFO.
+     * Intended for long-running commands whose progress should be visible with
+     * the application's default log level.
+     *
+     * @param args command and its arguments
+     * @throws BackupException if the command exits non-zero or cannot be started
+     */
+    public void runLogged(String... args) throws BackupException {
+        if (dryRun) {
+            log.info("[DRY-RUN] Would run: {}", String.join(" ", args));
+            return;
+        }
+        execute(args, false, true);
     }
 
     /**
@@ -97,7 +113,7 @@ public class ShellCommand {
             log.info("[DRY-RUN] Would run: {}", String.join(" ", args));
             return "";
         }
-        return (String) execute(args, true);
+        return (String) execute(args, true, false);
     }
 
     /** Streams command stdout directly into the supplied output stream. */
@@ -149,9 +165,10 @@ public class ShellCommand {
 
     /**
      * Executes the command. If {@code capture} is true, returns stdout as a
-     * String; otherwise streams each line to DEBUG and returns null.
+     * String; otherwise streams each line at the requested log level and
+     * returns null.
      */
-    private Object execute(String[] args, boolean capture) throws BackupException {
+    private Object execute(String[] args, boolean capture, boolean outputAtInfo) throws BackupException {
         String commandLine = String.join(" ", args);
         log.debug("Running: {}", commandLine);
 
@@ -184,7 +201,11 @@ public class ShellCommand {
                             output.append(line);
                         }
                     } else {
-                        log.debug(line);
+                        if (outputAtInfo) {
+                            log.info(line);
+                        } else {
+                            log.debug(line);
+                        }
                     }
                 }
             } catch (IOException ignored) {

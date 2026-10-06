@@ -27,6 +27,7 @@ class BackupApplicationIT {
         properties.setProperty("BACKUP_DEVICE_UUID", "dry-run-device");
         properties.setProperty("RESTIC_REPOSITORY", "/nonexistent/backup/restic");
         properties.setProperty("RESTIC_PASSWORD_FILE", password.toString());
+        properties.setProperty("RESTIC_TAG", "nextcloud");
         properties.setProperty("RESTIC_RETENTION_DAILY", "7");
         properties.setProperty("RESTIC_RETENTION_WEEKLY", "4");
         properties.setProperty("RESTIC_RETENTION_MONTHLY", "12");

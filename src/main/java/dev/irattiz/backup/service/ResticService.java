@@ -101,6 +101,11 @@ public class ResticService {
         List<String> args = new ArrayList<>();
         args.add("restic");
         args.add("backup");
+        args.add("--verbose=2");
+        args.add("--tag");
+        args.add(config.getResticTag());
+        args.add("--group-by");
+        args.add("host,tags");
         args.add("--repo");
         args.add(config.getResticRepository().toString());
         args.add("--password-file");
@@ -112,7 +117,7 @@ public class ResticService {
             args.add("--dry-run");
         }
         log.info("Running Restic backup of {} path(s)", paths.size());
-        shell.run(args.toArray(new String[0]));
+        shell.runLogged(args.toArray(new String[0]));
     }
 
     /**
@@ -120,10 +125,12 @@ public class ResticService {
      */
     public void applyRetention() throws BackupException {
         log.info("Applying Restic retention policy");
-        shell.run(
-                "restic", "forget", "--prune",
+        shell.runLogged(
+                "restic", "forget", "--prune", "--verbose=2",
                 "--repo", config.getResticRepository().toString(),
                 "--password-file", config.getResticPasswordFile().toString(),
+                "--tag", config.getResticTag(),
+                "--group-by", "host,tags",
                 "--keep-daily",   String.valueOf(config.getResticRetentionDaily()),
                 "--keep-weekly",  String.valueOf(config.getResticRetentionWeekly()),
                 "--keep-monthly", String.valueOf(config.getResticRetentionMonthly())
@@ -137,6 +144,8 @@ public class ResticService {
     public String getLatestSnapshotId() throws BackupException {
         String json = shell.runCapture(
                 "restic", "snapshots", "--json", "--last",
+                "--tag", config.getResticTag(),
+                "--group-by", "host,tags",
                 "--repo", config.getResticRepository().toString(),
                 "--password-file", config.getResticPasswordFile().toString());
 
@@ -163,6 +172,7 @@ public class ResticService {
         log.info("Restic repository stats:");
         String stats = shell.runCapture(
                 "restic", "stats", "latest",
+                "--tag", config.getResticTag(),
                 "--repo", config.getResticRepository().toString(),
                 "--password-file", config.getResticPasswordFile().toString());
         log.info(stats);
