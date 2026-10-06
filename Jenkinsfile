@@ -87,11 +87,15 @@ pipeline {
             steps {
                 sshagent(credentials: ['staging-ssh-key']) {
                     sh """
-                        ssh ${DEPLOY_HOST} "mkdir -p ${DEPLOY_PATH}"
-                        scp build/libs/nextcloud-backup-manager.jar ${DEPLOY_HOST}:${DEPLOY_PATH}/
-                        scp backup.conf ${DEPLOY_HOST}:${DEPLOY_PATH}/
-                        scp deploy/nextcloud-backup.service ${DEPLOY_HOST}:${DEPLOY_PATH}/
-                        scp deploy/nextcloud-backup.timer ${DEPLOY_HOST}:${DEPLOY_PATH}/
+                        ssh ${DEPLOY_HOST} 'mkdir -p ${DEPLOY_PATH}/app && \
+                            mkdir -p ${DEPLOY_PATH}/config && \
+                            chmod 0700 ${DEPLOY_PATH} && \
+                            chmod 0700 ${DEPLOY_PATH}/app && \
+                            chmod 0700 ${DEPLOY_PATH}/config'
+                        scp build/libs/nextcloud-backup-manager.jar ${DEPLOY_HOST}:${DEPLOY_PATH}/app/
+                        scp backup.conf ${DEPLOY_HOST}:${DEPLOY_PATH}/config/
+                        scp deploy/nextcloud-backup.service ${DEPLOY_HOST}:${DEPLOY_PATH}/app/
+                        scp deploy/nextcloud-backup.timer ${DEPLOY_HOST}:${DEPLOY_PATH}/app/
                     """
                 }
             }
