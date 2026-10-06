@@ -88,7 +88,7 @@ pipeline {
                 sshagent(credentials: ['staging-ssh-key']) {
                     sh """
                         ssh ${DEPLOY_HOST} 'mkdir -p ${DEPLOY_PATH}/app && \
-                            mkdir -p ${DEPLOY_PATH}/config && \
+                            mkdir -p ${DEPLOY_PATH}/app/config && \
                             chmod 0700 ${DEPLOY_PATH} && \
                             chmod 0700 ${DEPLOY_PATH}/app && \
                             chmod 0700 ${DEPLOY_PATH}/app/config'
