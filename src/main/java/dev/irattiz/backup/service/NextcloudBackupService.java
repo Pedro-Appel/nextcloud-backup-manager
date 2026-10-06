@@ -72,11 +72,11 @@ public class NextcloudBackupService {
 
         Set<Path> before = listFiles(backupDir);
 
-        log.debug("Found files {}", before.stream().map(Path::getFileName).limit(5).collect(Collectors.toList()));
+        log.debug("Found files: {}", before.stream().map(Path::getFileName).limit(5).collect(Collectors.toList()));
         shell.withTimeout(EXPORT_TIMEOUT).run("nextcloud.export", "-b");
 
         Set<Path> after = listFiles(backupDir);
-        log.debug("Found files {}", after.stream().map(Path::getFileName).limit(5).collect(Collectors.toList()));
+        log.debug("Found files: {}", after.stream().map(Path::getFileName).limit(5).collect(Collectors.toList()));
         after.removeAll(before);
 
         if (after.isEmpty()) {
