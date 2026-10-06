@@ -62,6 +62,7 @@ public class NextcloudBackupService {
     public void exportDb() throws BackupException {
         Path backupDir = config.getNextcloudBackupDir();
 
+        log.info("Running export for backup dir: {}", backupDir);
         if (config.isDryRun()) {
             shell.withTimeout(EXPORT_TIMEOUT).run("nextcloud.export", "-b");
             exportPath = backupDir.resolve("dry-run-export");
