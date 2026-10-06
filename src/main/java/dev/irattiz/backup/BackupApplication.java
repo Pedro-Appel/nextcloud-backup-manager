@@ -166,7 +166,8 @@ public class BackupApplication {
 
     /**
      * Derives the project root from the location of this JAR.
-     * - JAR case:  build/libs/app-all.jar  →  ../.. = project root
+     * - Build JAR:  project/build/libs/app-all.jar → project root
+     * - Installed JAR: /opt/backup/app.jar → /opt/backup
      * - IDE/test:  walks up until a directory containing config/ is found
      */
     static Path resolveProjectRoot() throws URISyntaxException {
@@ -178,7 +179,18 @@ public class BackupApplication {
                         .toURI());
 
         if (codeLocation.toString().endsWith(".jar")) {
-            return codeLocation.getParent().getParent().getParent();
+            Path jarDirectory = codeLocation.getParent();
+            Path parent = jarDirectory != null ? jarDirectory.getParent() : null;
+            if (jarDirectory != null
+                    && jarDirectory.getFileName() != null
+                    && "libs".equals(jarDirectory.getFileName().toString())
+                    && parent != null
+                    && parent.getFileName() != null
+                    && "build".equals(parent.getFileName().toString())
+                    && parent.getParent() != null) {
+                return parent.getParent();
+            }
+            return jarDirectory != null ? jarDirectory : Path.of(System.getProperty("user.dir"));
         }
 
         Path candidate = codeLocation.toAbsolutePath().normalize();
