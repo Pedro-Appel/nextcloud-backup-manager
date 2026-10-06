@@ -88,12 +88,12 @@ pipeline {
                 sshagent(credentials: ['staging-ssh-key']) {
                     sh """
                         ssh ${DEPLOY_HOST} 'mkdir -p ${DEPLOY_PATH}/app && \
-                            mkdir -p ${DEPLOY_PATH}/config && \
+                            mkdir -p ${DEPLOY_PATH}/app/config && \
                             chmod 0700 ${DEPLOY_PATH} && \
                             chmod 0700 ${DEPLOY_PATH}/app && \
-                            chmod 0700 ${DEPLOY_PATH}/config'
+                            chmod 0700 ${DEPLOY_PATH}/app/config'
                         scp build/libs/nextcloud-backup-manager.jar ${DEPLOY_HOST}:${DEPLOY_PATH}/app/
-                        scp backup.conf ${DEPLOY_HOST}:${DEPLOY_PATH}/config/
+                        scp backup.conf ${DEPLOY_HOST}:${DEPLOY_PATH}/app/config/
                         scp deploy/nextcloud-backup.service ${DEPLOY_HOST}:${DEPLOY_PATH}/app/
                         scp deploy/nextcloud-backup.timer ${DEPLOY_HOST}:${DEPLOY_PATH}/app/
                     """
@@ -107,8 +107,8 @@ pipeline {
                     sh """
                         ssh ${DEPLOY_HOST} '\
                             cd ${DEPLOY_PATH} && \
-                            chmod 0644 nextcloud-backup-manager.jar && \
-                            chmod 0600 backup.conf'
+                            chmod 0644 app/nextcloud-backup-manager.jar && \
+                            chmod 0600 app/config/backup.conf'
                     """
                 }
             }
