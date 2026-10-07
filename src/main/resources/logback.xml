@@ -1,0 +1,28 @@
+<configuration>
+
+    <!-- Console appender — colourised, writes to stderr -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <target>System.err</target>
+        <encoder>
+            <pattern>%d{HH:mm:ss} %highlight(%-5level) %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Rolling file appender — plain text, daily rotation -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_DIR}/backup-%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>90</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%-5level] %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Root logger level is overridden at runtime via BackupLogger.configure() -->
+    <root level="${LOG_LEVEL:-INFO}">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </root>
+
+</configuration>
