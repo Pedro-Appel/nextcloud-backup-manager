@@ -168,8 +168,8 @@ Maps to `lib/restic.sh`:
 - `repositoryExists()` — probes with `restic snapshots`.
 - `repositoryInit()` — runs `restic init` if needed.
 - `unlock()` — removes stale locks.
-- `backup(List<Path> paths)` — runs verbose `restic backup` with the configured tag and `host,tags` grouping; adds `--dry-run` when dry-run mode is on.
-- `applyRetention()` — runs verbose `restic forget --prune` with configured keep counts, tag, and grouping.
+- `backup(List<Path> paths)` — streams `restic backup --json`, logs formatted progress, returns its summary metadata, and uses the configured tag and `host,tags` grouping; adds `--dry-run` when dry-run mode is on.
+- `applyRetention()` — streams `restic forget --prune` progress with configured keep counts, tag, and grouping.
 - `getLatestSnapshotId()` — parses tag-filtered, `host,tags`-grouped `restic snapshots --json` output to get the most recent ID.
 - `getStats()` — runs `restic stats latest` filtered by tag and logs output.
 

@@ -99,7 +99,7 @@ public class BackupApplication {
         BackupLogger.logSection("Restic backup");
         restic.repositoryInit();
         restic.unlock();
-        restic.backup(List.of(
+        ResticBackupResult backupResult = restic.backup(List.of(
                 context.getConfig().getNextcloudDataDir(),
                 context.getConfig().getNextcloudConfigDir(),
                 nextcloudBackup.getExportPath()
@@ -126,7 +126,14 @@ public class BackupApplication {
 
         // ---- Success notification + summary ----
         Duration totalDuration = Duration.between(startTime, Instant.now());
-        String snapshotId = restic.getLatestSnapshotId();
+        String snapshotId;
+        if (context.getConfig().isDryRun()) {
+            snapshotId = "(dry-run)";
+        } else if (backupResult != null && backupResult.hasSnapshotId()) {
+            snapshotId = backupResult.snapshotId();
+        } else {
+            snapshotId = restic.getLatestSnapshotId();
+        }
         notifier.sendSuccess(snapshotId, totalDuration);
 
         BackupLogger.logSummary(snapshotId, totalDuration, hostname());

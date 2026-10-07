@@ -34,7 +34,7 @@ pipeline {
             }
             steps {
                 input message: "Validations passed for dev @ ${env.GIT_COMMIT?.take(7)}. Deploy the staging candidate and publish the merge?",
-                      ok: 'Merge & Deploy'
+                      ok: 'Deploy & Merge'
                       // submitter: 'youruser'   // uncomment + set to restrict who can approve
             }
         }

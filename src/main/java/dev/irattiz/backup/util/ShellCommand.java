@@ -10,7 +10,9 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 /**
  * Reusable wrapper around {@link ProcessBuilder}.
@@ -80,23 +82,27 @@ public class ShellCommand {
             log.info("[DRY-RUN] Would run: {}", String.join(" ", args));
             return;
         }
-        execute(args, false, false);
+        execute(args, false, Map.of(), log::debug);
     }
 
     /**
-     * Executes a command, streaming its output to INFO.
-     * Intended for long-running commands whose progress should be visible with
-     * the application's default log level.
+     * Executes a command with additional environment variables and streams
+     * each output line to the supplied handler.
      *
+     * @param environment environment variables to add or override
+     * @param outputHandler receives merged stdout and stderr one line at a time
      * @param args command and its arguments
      * @throws BackupException if the command exits non-zero or cannot be started
      */
-    public void runLogged(String... args) throws BackupException {
+    public void runStreaming(
+            Map<String, String> environment,
+            Consumer<String> outputHandler,
+            String... args) throws BackupException {
         if (dryRun) {
             log.info("[DRY-RUN] Would run: {}", String.join(" ", args));
             return;
         }
-        execute(args, false, true);
+        execute(args, false, environment, outputHandler);
     }
 
     /**
@@ -113,7 +119,7 @@ public class ShellCommand {
             log.info("[DRY-RUN] Would run: {}", String.join(" ", args));
             return "";
         }
-        return (String) execute(args, true, false);
+        return (String) execute(args, true, Map.of(), null);
     }
 
     /** Streams command stdout directly into the supplied output stream. */
@@ -165,15 +171,20 @@ public class ShellCommand {
 
     /**
      * Executes the command. If {@code capture} is true, returns stdout as a
-     * String; otherwise streams each line at the requested log level and
-     * returns null.
+     * String; otherwise streams each line to {@code outputHandler} and returns
+     * null.
      */
-    private Object execute(String[] args, boolean capture, boolean outputAtInfo) throws BackupException {
+    private Object execute(
+            String[] args,
+            boolean capture,
+            Map<String, String> environment,
+            Consumer<String> outputHandler) throws BackupException {
         String commandLine = String.join(" ", args);
         log.debug("Running: {}", commandLine);
 
         ProcessBuilder pb = new ProcessBuilder(List.of(args));
         pb.redirectErrorStream(true); // merge stderr into stdout
+        pb.environment().putAll(environment);
 
         Process process;
         try {
@@ -201,10 +212,10 @@ public class ShellCommand {
                             output.append(line);
                         }
                     } else {
-                        if (outputAtInfo) {
-                            log.info(line);
-                        } else {
-                            log.debug(line);
+                        try {
+                            outputHandler.accept(line);
+                        } catch (RuntimeException e) {
+                            log.warn("Command output handler failed: {}", e.getMessage());
                         }
                     }
                 }

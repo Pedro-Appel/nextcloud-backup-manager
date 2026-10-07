@@ -40,6 +40,7 @@ class BackupContextTest {
         p.setProperty("RESTIC_REPOSITORY",      "/mnt/backup/restic");
         p.setProperty("RESTIC_PASSWORD_FILE",   passFile.toAbsolutePath().toString());
         p.setProperty("RESTIC_TAG",             "nextcloud");
+        p.setProperty("RESTIC_PROGRESS_FPS",    "0.033333");
         p.setProperty("RESTIC_RETENTION_DAILY",   "7");
         p.setProperty("RESTIC_RETENTION_WEEKLY",  "4");
         p.setProperty("RESTIC_RETENTION_MONTHLY", "12");

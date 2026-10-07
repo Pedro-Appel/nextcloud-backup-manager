@@ -12,7 +12,9 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -129,13 +131,15 @@ class ShellCommandTest {
     }
 
     @Test
-    void runLoggedStreamsCommandOutputAtInfo() throws BackupException {
+    void runStreamingPassesEnvironmentAndLinesToHandler() throws BackupException {
         ShellCommand shell = new ShellCommand(false);
-        shell.runLogged("echo", "visible-progress");
+        List<String> lines = new ArrayList<>();
 
-        assertTrue(listAppender.list.stream().anyMatch(event ->
-                        event.getLevel() == Level.INFO
-                                && event.getFormattedMessage().contains("visible-progress")),
-                "Expected command output at INFO, got: " + capturedMessages());
+        shell.runStreaming(
+                Map.of("NBM_STREAM_TEST", "configured"),
+                lines::add,
+                "sh", "-c", "printf '%s\\n' \"$NBM_STREAM_TEST\"");
+
+        assertEquals(List.of("configured"), lines);
     }
 }

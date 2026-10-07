@@ -18,6 +18,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -39,7 +41,7 @@ class ResticServiceTest {
     ResticService service;
 
     @BeforeEach
-    void setUp() throws IOException {
+    void setUp() throws IOException, BackupException {
         Path repo = tempDir.resolve("restic-repo");
         Path passFile = tempDir.resolve("restic.pass");
         Files.createFile(passFile);
@@ -50,6 +52,7 @@ class ResticServiceTest {
         when(config.getResticRetentionDaily()).thenReturn(7);
         when(config.getResticRetentionWeekly()).thenReturn(4);
         when(config.getResticRetentionMonthly()).thenReturn(12);
+        when(config.getResticProgressFps()).thenReturn(0.033333);
         when(config.isDryRun()).thenReturn(false);
 
         service = new ResticService(config, shell);
@@ -127,12 +130,13 @@ class ResticServiceTest {
 
         ArgumentCaptor<String[]> captor = ArgumentCaptor.forClass(String[].class);
         service.backup(List.of(Path.of("/data")));
-        verify(shell).runLogged(captor.capture());
+        verify(shell).runStreaming(anyMap(), any(), captor.capture());
 
         List<String> args = Arrays.asList(captor.getValue());
         assertTrue(args.contains("--dry-run"),
                 "--dry-run must be present in backup args when isDryRun=true, got: " + args);
-        assertTrue(args.contains("--verbose=2"), "Missing --verbose=2");
+        assertTrue(args.contains("--json"), "Missing --json");
+        assertFalse(args.contains("--verbose=2"), "--verbose=2 must be removed");
         assertEquals("nextcloud", args.get(args.indexOf("--tag") + 1));
         assertEquals("host,tags", args.get(args.indexOf("--group-by") + 1));
     }
@@ -147,7 +151,7 @@ class ResticServiceTest {
 
         ArgumentCaptor<String[]> captor = ArgumentCaptor.forClass(String[].class);
         service.backup(List.of(Path.of("/data")));
-        verify(shell).runLogged(captor.capture());
+        verify(shell).runStreaming(anyMap(), any(), captor.capture());
 
         List<String> args = Arrays.asList(captor.getValue());
         assertFalse(args.contains("--dry-run"),
@@ -162,7 +166,7 @@ class ResticServiceTest {
     void applyRetentionPassesCorrectKeepArgs() throws BackupException {
         ArgumentCaptor<String[]> captor = ArgumentCaptor.forClass(String[].class);
         service.applyRetention();
-        verify(shell).runLogged(captor.capture());
+        verify(shell).runStreaming(anyMap(), any(), captor.capture());
 
         List<String> args = Arrays.asList(captor.getValue());
         assertTrue(args.contains("--keep-daily"),   "Missing --keep-daily");
@@ -171,7 +175,7 @@ class ResticServiceTest {
         assertTrue(args.contains("4"),               "Missing weekly count");
         assertTrue(args.contains("--keep-monthly"), "Missing --keep-monthly");
         assertTrue(args.contains("12"),              "Missing monthly count");
-        assertTrue(args.contains("--verbose=2"),     "Missing --verbose=2");
+        assertFalse(args.contains("--verbose=2"),    "--verbose=2 must be removed");
         assertEquals("nextcloud", args.get(args.indexOf("--tag") + 1));
         assertEquals("host,tags", args.get(args.indexOf("--group-by") + 1));
     }
@@ -202,5 +206,16 @@ class ResticServiceTest {
                 "--tag", "nextcloud",
                 "--repo", config.getResticRepository().toString(),
                 "--password-file", config.getResticPasswordFile().toString());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void backupSetsConfiguredProgressFrequency() throws BackupException {
+        ArgumentCaptor<Map<String, String>> environment = ArgumentCaptor.forClass(Map.class);
+
+        service.backup(List.of(Path.of("/data")));
+
+        verify(shell).runStreaming(environment.capture(), any(Consumer.class), any(String[].class));
+        assertEquals("0.033333", environment.getValue().get("RESTIC_PROGRESS_FPS"));
     }
 }
