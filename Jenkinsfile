@@ -162,7 +162,7 @@ pipeline {
             }
         }
 
-        stage('Prepare main candidate') {
+        stage('Prepare and publish main candidate') {
             steps {
                 sshagent(credentials: ['git-checkout-key']) {
                     sh """
@@ -170,8 +170,9 @@ pipeline {
                         git config user.name  "Jenkins"
                         git fetch origin +refs/heads/main:refs/remotes/origin/main +refs/heads/staging:refs/remotes/origin/staging
                         git checkout -B main origin/main
-                        git merge --no-ff ${env.GIT_COMMIT} -m "Merge staging into main (build #${env.BUILD_NUMBER})"
+                        git merge --no-ff origin/staging -m "Merge staging into main (build #${env.BUILD_NUMBER})"
                     """
+                    sh 'git push origin main'
                 }
             }
         }
@@ -179,7 +180,7 @@ pipeline {
 
     post {
         success {
-            echo "Main candidate validated, deployed, and merged (#${env.BUILD_NUMBER})"
+            echo "Main candidate validated, deployed, enabled and merged (#${env.BUILD_NUMBER})"
         }
         aborted {
             echo "Merge/deploy was aborted, or the approval window timed out."
@@ -188,9 +189,6 @@ pipeline {
             echo "Pipeline FAILED — check which stage: validation, merge, build, or deploy."
         }
         cleanup {
-            // Runs last, after whichever of the above fired, regardless of
-            // outcome — removes the checkout and temporary deployment config
-            // from the Jenkins workspace after each run.
             deleteDir()
         }
     }
