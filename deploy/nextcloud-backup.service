@@ -5,8 +5,9 @@ After=network.target
 [Service]
 Type=oneshot
 User=root
+Group=root
 WorkingDirectory=/opt/backup
-Environment=RESTIC_PROGRESS_FPS=0.033333
+Environment=RESTIC_PROGRESS_FPS=0.1
 ExecStart=/usr/bin/java -jar /opt/backup/nextcloud-backup-manager.jar
 StandardOutput=journal
 StandardError=journal
