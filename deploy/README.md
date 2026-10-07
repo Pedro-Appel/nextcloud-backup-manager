@@ -1,10 +1,20 @@
-# Java systemd deployment
+# Deployment
 
-Build the self-contained JAR with `./gradlew shadowJar`, then install it under the stable name
-expected by the service. Put the matching `config/backup.conf` in `/opt/backup/config/`.
+## Manual installation
+
+Build the self-contained JAR and install it with the configuration and systemd units. The service expects this layout:
+
+```text
+/opt/backup/
+├── nextcloud-backup-manager.jar
+└── config/backup.conf
+```
+
+Install the files and enable the timer:
 
 ```bash
-sudo install -d /opt/backup/config
+./gradlew shadowJar
+sudo install -d -m 0755 /opt/backup/config
 sudo install -m 0644 build/libs/nextcloud-backup-manager-1.0.0-all.jar \
   /opt/backup/nextcloud-backup-manager.jar
 sudo install -m 0600 config/backup.conf /opt/backup/config/backup.conf
@@ -14,101 +24,36 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now nextcloud-backup.timer
 ```
 
-The service runs as root at 02:00 daily. Check the next scheduled run with
-`systemctl list-timers nextcloud-backup.timer` and inspect output with
-`journalctl -u nextcloud-backup.service`. Follow formatted Restic progress live with:
+The service runs as root. The timer starts it every Sunday at 03:00 local time. `Persistent=false` means a missed activation is not run later. The service sets `RESTIC_PROGRESS_FPS=0.1`, which requests progress updates about every 10 seconds and overrides the config value.
+
+Check the next activation with `systemctl list-timers nextcloud-backup.timer` and inspect logs with `journalctl -u nextcloud-backup.service`. To follow a run live:
 
 ```bash
 journalctl -u nextcloud-backup.service -f
 ```
 
-The service sets `RESTIC_PROGRESS_FPS=0.033333`, which requests approximately one progress
-message every 30 seconds. The environment setting overrides `RESTIC_PROGRESS_FPS` from
-`config/backup.conf`. For example, use `0.1` for an update every 10 seconds or `0.016666` for an
-update every minute. After changing the service unit, reload systemd before the next run:
+After editing the units, reload systemd. Use `systemd-analyze verify /etc/systemd/system/nextcloud-backup.service /etc/systemd/system/nextcloud-backup.timer` to check them on the target host.
+
+## Jenkins deployment
+
+The root `Jenkinsfile` expects an agent with Java 21, Git, `ssh`, and `scp`, along with Jenkins Pipeline, Git, Credentials Binding, and SSH Agent plugins. Configure the `staging-deploy` SSH alias and trusted host key. Add Git credential `git-checkout-key`, SSH credential `staging-ssh-key`, and protected Secret file credential `backup-env-file` containing the staging `backup.conf`.
+
+The pipeline validates and dry-run checks `dev`, creates and validates a merge candidate on `staging`, deploys the JAR/config/units to the staging host, runs the staged JAR with `--dry-run`, then publishes the staging merge. After the production approval, it runs the privileged helper on the target host and publishes the merge to `main`.
+
+The SSH account must be able to write the staging directory and run `/usr/local/sbin/deploy-nextcloud-backup` through non-interactive sudo. The helper at [`deploy-nextcloud-backup.sh`](deploy-nextcloud-backup.sh) is the deployment implementation: it refuses to run during an active backup, installs the staged JAR and config under `/opt/backup`, verifies and installs the systemd units, and enables/restarts the timer. It currently expects the deployment account home to be `/home/deploy` and the staged files under `/home/deploy/staging/backup-manager/app`; update those paths in the helper and Jenkins configuration together if the account or staging path changes.
+
+Install the helper on the target host as a root-owned executable:
 
 ```bash
-sudo systemctl daemon-reload
-sudo systemctl restart nextcloud-backup.service
+sudo install -o root -g root -m 0755 deploy/deploy-nextcloud-backup.sh \
+  /usr/local/sbin/deploy-nextcloud-backup
+sudo install -d -o root -g root -m 0755 /opt/backup/config
 ```
 
-Verify the unit files on the target Ubuntu host with
-`systemd-analyze verify /etc/systemd/system/nextcloud-backup.service /etc/systemd/system/nextcloud-backup.timer`.
-
-## Jenkins setup
-
-The root `Jenkinsfile` expects an agent with Java 21, Git, `ssh`, and `scp`, plus the Pipeline, Git,
-Credentials Binding, and SSH Agent plugins. Configure the `staging-deploy` SSH alias and trusted
-host key on that agent. Add the named Git and SSH private-key credentials, and add `backup-env-file`
-as a protected Secret file containing the staging `backup.conf`. The SSH account used for
-deployment must have non-interactive `sudo` permission for `/opt/backup` installation and the
-optional systemd commands.
-
-### Privileged deployment helper
-
-Use a root-owned helper when the pipeline account must install updated unit files without general
-sudo access. On the target host, create `/usr/local/sbin/deploy-nextcloud-backup` as an
-administrator. Replace `/home/deploy` if the deployment account has a different home directory.
-
-```sh
-#!/bin/sh
-set -eu
-
-if [ "$#" -ne 0 ]; then
-    echo "This command accepts no arguments" >&2
-    exit 2
-fi
-
-stage=/home/deploy/staging/backup-manager/app
-service="$stage/nextcloud-backup.service"
-timer="$stage/nextcloud-backup.timer"
-
-for file in "$service" "$timer"; do
-    [ -f "$file" ] || {
-        echo "Missing regular file: $file" >&2
-        exit 1
-    }
-    [ ! -L "$file" ] || {
-        echo "Refusing symbolic link: $file" >&2
-        exit 1
-    }
-done
-
-/usr/bin/systemd-analyze verify "$service" "$timer"
-/usr/bin/install -o root -g root -m 0644 \
-    "$service" /etc/systemd/system/nextcloud-backup.service
-/usr/bin/install -o root -g root -m 0644 \
-    "$timer" /etc/systemd/system/nextcloud-backup.timer
-
-/usr/bin/systemctl daemon-reload
-/usr/bin/systemctl enable nextcloud-backup.timer
-/usr/bin/systemctl restart nextcloud-backup.timer
-/usr/bin/systemctl --no-pager list-timers nextcloud-backup.timer
-```
-
-Confirm the absolute command paths with `command -v systemctl systemd-analyze deploy-nextcloud-backup`, then make
-the helper root-owned and executable:
-
-```bash
-sudo chown root:root /usr/local/sbin/deploy-nextcloud-backup
-sudo chmod 0755 /usr/local/sbin/deploy-nextcloud-backup
-```
-
-Create the sudoers rule with `sudo visudo -f /etc/sudoers.d/nextcloud-backup-deploy`:
+Allow only that helper through sudo. Replace `deploy` with the actual SSH account if needed:
 
 ```sudoers
 deploy ALL=(root) NOPASSWD: /usr/local/sbin/deploy-nextcloud-backup
 ```
 
-Validate the rule and invoke the helper non-interactively from the pipeline:
-
-```bash
-sudo chmod 0440 /etc/sudoers.d/nextcloud-backup-deploy
-sudo visudo -c
-ssh staging-deploy 'sudo -n /usr/local/sbin/deploy-nextcloud-backup'
-```
-
-Keep the helper and sudoers file writable only by root. The pipeline still controls code executed
-as root through both the unit definition and the deployed JAR. For stronger privilege separation,
-keep the units root-controlled and run the service as a dedicated backup account with only the
-required filesystem permissions.
+Validate the sudoers file with `visudo -c`. The helper copies the config with mode `0600`; the staging credential and directory should also be protected.
