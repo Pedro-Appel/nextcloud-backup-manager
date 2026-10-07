@@ -41,6 +41,10 @@ tasks.test {
     useJUnitPlatform {
         excludeTags("integration")
     }
+    testLogging {
+        events("passed", "skipped", "failed")
+        showStandardStreams = true
+    }
 }
 
 tasks.register<Test>("integrationTest") {
