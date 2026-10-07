@@ -25,7 +25,13 @@ pipeline {
 
         stage('Validate') {
             steps {
-                sh './gradlew test integrationTest'
+                sh './gradlew test'
+            }
+        }
+
+        stage('Test app dry run') {
+            steps {
+                sh './gradlew integrationTest'
             }
         }
 
@@ -95,7 +101,6 @@ pipeline {
                             chmod 0700 ${STG_DEPLOY_PATH}/app/config'
                         scp build/libs/nextcloud-backup-manager.jar ${DEPLOY_HOST}:${STG_DEPLOY_PATH}/app/
                         scp backup.conf ${DEPLOY_HOST}:${STG_DEPLOY_PATH}/app/config/
-                        scp deploy/deploy-nextcloud-backup.sh ${DEPLOY_HOST}:${STG_DEPLOY_PATH}/app/
                         scp deploy/nextcloud-backup.service ${DEPLOY_HOST}:${STG_DEPLOY_PATH}/app/
                         scp deploy/nextcloud-backup.timer ${DEPLOY_HOST}:${STG_DEPLOY_PATH}/app/
                     """
@@ -111,6 +116,18 @@ pipeline {
                             cd ${STG_DEPLOY_PATH} && \
                             chmod 0644 app/nextcloud-backup-manager.jar && \
                             chmod 0600 app/config/backup.conf'
+                    """
+                }
+            }
+        }
+
+        stage('Smoke test') {
+            steps {
+                sshagent(credentials: ['staging-ssh-key']) {
+                    sh """
+                        ssh ${DEPLOY_HOST} '\
+                            cd ${STG_DEPLOY_PATH} && \
+                            java -jar app/nextcloud-backup-manager.jar --dry-run'
                     """
                 }
             }
