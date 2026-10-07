@@ -42,7 +42,7 @@ Java 21 command-line application that creates Restic backups of a Snap-based Nex
    ./gradlew shadowJar
    ```
 
-5. Rehearse the workflow from the repository root:
+5. Rehearse the workflow from the repository root. Dry-run creates the export directory and deletes its contents during cleanup, so confirm it contains no exports you need to keep:
 
    ```bash
    sudo java -jar build/libs/nextcloud-backup-manager-1.0.0-all.jar --dry-run
@@ -105,7 +105,6 @@ RESTIC_REPOSITORY=/mnt/backup/restic
 RESTIC_PASSWORD_FILE=/etc/backup-service/restic.pass
 RESTIC_TAG=nextcloud
 RESTIC_PROGRESS_FPS=0.033333
-RESTIC_CACHE_DIR=/var/cache/backup
 RESTIC_RETENTION_DAILY=7
 RESTIC_RETENTION_WEEKLY=4
 RESTIC_RETENTION_MONTHLY=12
@@ -118,7 +117,7 @@ NEXTCLOUD_OCC_TIMEOUT=30
 NOTIFIER_DIR=/opt/home-lab/notifier
 ```
 
-`NEXTCLOUD_DATA_DIR`, `NEXTCLOUD_CONFIG_DIR`, and `NEXTCLOUD_BACKUP_DIR` have Snap defaults. Set `NEXTCLOUD_BACKUP_DIR` when the Snap export directory is non-standard. `RESTIC_TAG` identifies this backup set and must be non-blank. Backup parent selection and retention are grouped by host and this tag, so timestamped Snap export paths do not prevent reuse of the preceding snapshot. `RESTIC_PROGRESS_FPS` controls formatted progress frequency and defaults to `0.033333` (approximately one update every 30 seconds); an environment variable with the same name takes precedence. Retention values must be positive integers and path settings must be absolute.
+`NEXTCLOUD_DATA_DIR`, `NEXTCLOUD_CONFIG_DIR`, and `NEXTCLOUD_BACKUP_DIR` have Snap defaults. Set `NEXTCLOUD_BACKUP_DIR` when the Snap export directory is non-standard. `RESTIC_TAG` identifies this backup set and must be non-blank. Backup parent selection and retention are grouped by host and this tag, so timestamped Snap export paths do not prevent reuse of the preceding snapshot. `RESTIC_PROGRESS_FPS` controls formatted progress frequency and defaults to `0.033333` (approximately one update every 30 seconds); an environment variable with the same name takes precedence. The checked-in systemd service sets it to `0.1` (approximately one update every 10 seconds). Retention values must be positive integers and path settings must be absolute. `RESTIC_CACHE_DIR` may appear in existing config files, but the current application does not pass it to Restic.
 
 Configuration precedence for dry-run mode is `DRY_RUN` environment variable, `--dry-run`, `DRY_RUN` in `backup.conf`, then `false`.
 
@@ -134,11 +133,11 @@ Available command-line options:
 
 ```text
 Usage: nextcloud-backup-manager [--dry-run] [--help]
-  --dry-run   Simulate all operations without writing data
+  --dry-run   Skip subprocess operations and simulate the workflow
   --help      Show this message
 ```
 
-Dry-run mode skips external commands, drive checks, notifier calls, and maintenance-mode changes. Startup still loads and validates the configuration, checks that the Restic password file exists, creates the configured Nextcloud export directory if necessary, and writes application logs.
+Dry-run mode skips subprocess execution, drive checks, notifier calls, and maintenance-mode changes. Startup still loads and validates the configuration, checks that the Restic password file exists, creates the configured Nextcloud export directory if necessary, and writes application logs. The workflow's export cleanup also still removes the contents of that directory, so do not use dry-run against a directory containing exports you need to keep.
 
 If startup reports `Cannot read config file`, use the path printed in the error. Create its parent directory and install the configuration there with mode `0600`; changing the directory from which Java is launched does not change the expected path.
 
@@ -165,7 +164,7 @@ Restic backup JSON is rendered as compact progress and summary messages at INFO.
 
 ## Systemd deployment
 
-See [`deploy/README.md`](deploy/README.md) for installation of the JAR, configuration, service unit, and daily timer.
+See [`deploy/README.md`](deploy/README.md) for installation of the JAR, configuration, service unit, and weekly timer.
 
 ```bash
 ./gradlew shadowJar
@@ -212,9 +211,9 @@ Tests mirror these packages under `src/test/java/dev/irattiz/backup`. `BackupApp
 | `src/main/java/dev/irattiz/backup/util/ShellCommand.java` | Runs system commands, applies timeouts, and implements command-level dry-run behavior |
 | `src/main/resources/logback.xml` | Configures coloured console output and 90 days of rolling log files |
 | `deploy/nextcloud-backup.service` | Runs the deployed JAR once as root from `/opt/backup` |
-| `deploy/nextcloud-backup.timer` | Starts the service every day at 02:00 and catches missed runs |
+| `deploy/nextcloud-backup.timer` | Starts the service every Sunday at 03:00; missed runs are not caught up |
 | `deploy/README.md` | Installation and Jenkins deployment instructions |
-| `Jenkinsfile` | Validates, packages, deploys, and optionally enables the staging timer |
+| `Jenkinsfile` | Validates, packages, deploys a staging candidate, and promotes it to production after approval |
 | `ARCHITECTURE.md` | Application boundaries and design details |
 | `SPEC.md` | Functional requirements and expected behavior |
 
@@ -227,7 +226,7 @@ Tests mirror these packages under `src/test/java/dev/irattiz/backup`. `BackupApp
 # Run the end-to-end dry-run integration test
 ./gradlew integrationTest
 
-# Run all verification tasks and build the shaded JAR
+# Run unit and integration tests and build the shaded JAR
 ./gradlew test integrationTest shadowJar
 
 # Remove generated build output
