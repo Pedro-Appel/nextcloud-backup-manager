@@ -23,6 +23,7 @@ public class BackupConfig {
     private static final String SNAP_DEFAULT_DATA_DIR    = "/var/snap/nextcloud/current/nextcloud/data";
     private static final String SNAP_DEFAULT_CONFIG_DIR  = "/var/snap/nextcloud/current/nextcloud/config";
     private static final String SNAP_DEFAULT_BACKUP_DIR  = "/var/snap/nextcloud/common/backups";
+    private static final double RESTIC_DEFAULT_PROGRESS_FPS = 0.033333;
 
     private static final List<String> REQUIRED_KEYS = List.of(
             "BACKUP_MOUNT",
@@ -141,6 +142,8 @@ public class BackupConfig {
                         "Config key '" + key + "' must be a positive integer (got: " + value + ")");
             }
         }
+
+        getResticProgressFps();
     }
 
     private boolean isPathKey(String key) {
@@ -179,6 +182,30 @@ public class BackupConfig {
 
     public String getResticTag() {
         return props.getProperty("RESTIC_TAG").trim();
+    }
+
+    /**
+     * Returns the Restic progress update frequency. The environment variable
+     * takes precedence over the config file and defaults to one update every
+     * 30 seconds.
+     */
+    public double getResticProgressFps() throws BackupException {
+        String value = envSupplier.apply("RESTIC_PROGRESS_FPS");
+        if (value == null || value.isBlank()) {
+            value = props.getProperty(
+                    "RESTIC_PROGRESS_FPS",
+                    String.valueOf(RESTIC_DEFAULT_PROGRESS_FPS));
+        }
+        try {
+            double fps = Double.parseDouble(value.trim());
+            if (!Double.isFinite(fps) || fps <= 0) {
+                throw new NumberFormatException();
+            }
+            return fps;
+        } catch (NumberFormatException e) {
+            throw new BackupException(
+                    "Config key 'RESTIC_PROGRESS_FPS' must be a positive number (got: " + value + ")");
+        }
     }
 
     public Path getResticCacheDir() {

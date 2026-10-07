@@ -54,7 +54,7 @@ class BackupApplicationTest {
         when(config.isDryRun()).thenReturn(false);
 
         when(nextcloudBackup.getExportPath()).thenReturn(tempDir.resolve("export.tar.gz"));
-        when(restic.getLatestSnapshotId()).thenReturn("abc1234");
+        when(restic.backup(anyList())).thenReturn(new ResticBackupResult("abc1234"));
     }
 
     // ------------------------------------------------------------------
@@ -79,6 +79,7 @@ class BackupApplicationTest {
         order.verify(nextcloud).maintenanceDisable();
         order.verify(notifier).sendSuccess(eq("abc1234"), any(Duration.class));
         order.verify(restic).getStats();
+        verify(restic, never()).getLatestSnapshotId();
     }
 
     // ------------------------------------------------------------------
@@ -143,5 +144,16 @@ class BackupApplicationTest {
             System.setOut(original);
         }
         assertTrue(output.toString().contains("Usage: nextcloud-backup-manager [--dry-run] [--help]"));
+    }
+
+    @Test
+    void fallsBackToSnapshotLookupWhenSummaryHasNoSnapshotId() throws BackupException {
+        when(restic.backup(anyList())).thenReturn(ResticBackupResult.empty());
+        when(restic.getLatestSnapshotId()).thenReturn("fallback1");
+
+        BackupApplication.runWorkflow(context);
+
+        verify(restic).getLatestSnapshotId();
+        verify(notifier).sendSuccess(eq("fallback1"), any(Duration.class));
     }
 }

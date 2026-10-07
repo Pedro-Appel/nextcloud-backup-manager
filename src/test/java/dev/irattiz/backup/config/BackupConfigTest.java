@@ -39,6 +39,7 @@ class BackupConfigTest {
         p.setProperty("RESTIC_REPOSITORY", "/mnt/backup/restic");
         p.setProperty("RESTIC_PASSWORD_FILE", "/etc/backup-service/restic.pass");
         p.setProperty("RESTIC_TAG", "nextcloud");
+        p.setProperty("RESTIC_PROGRESS_FPS", "0.033333");
         p.setProperty("RESTIC_RETENTION_DAILY", "7");
         p.setProperty("RESTIC_RETENTION_WEEKLY", "4");
         p.setProperty("RESTIC_RETENTION_MONTHLY", "12");
@@ -63,6 +64,7 @@ class BackupConfigTest {
         assertEquals(Path.of("/mnt/backup/restic"), config.getResticRepository());
         assertEquals(Path.of("/etc/backup-service/restic.pass"), config.getResticPasswordFile());
         assertEquals("nextcloud", config.getResticTag());
+        assertEquals(0.033333, config.getResticProgressFps());
         assertEquals(7, config.getResticRetentionDaily());
         assertEquals(4, config.getResticRetentionWeekly());
         assertEquals(12, config.getResticRetentionMonthly());
@@ -123,6 +125,26 @@ class BackupConfigTest {
 
         BackupException ex = assertThrows(BackupException.class, () -> new BackupConfig(file));
         assertTrue(ex.getMessage().contains("RESTIC_TAG"));
+    }
+
+    @Test
+    void environmentOverridesResticProgressFps() throws Exception {
+        Path file = writeConfig(validProps());
+        BackupConfig config = new BackupConfig(
+                file,
+                name -> "RESTIC_PROGRESS_FPS".equals(name) ? "0.1" : null);
+
+        assertEquals(0.1, config.getResticProgressFps());
+    }
+
+    @Test
+    void throwsOnInvalidResticProgressFps() throws Exception {
+        Properties p = validProps();
+        p.setProperty("RESTIC_PROGRESS_FPS", "0");
+        Path file = writeConfig(p);
+
+        BackupException ex = assertThrows(BackupException.class, () -> new BackupConfig(file));
+        assertTrue(ex.getMessage().contains("RESTIC_PROGRESS_FPS"));
     }
 
     // ------------------------------------------------------------------

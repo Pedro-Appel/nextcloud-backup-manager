@@ -14,6 +14,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Thin wrapper around the restic CLI.
@@ -94,14 +95,14 @@ public class ResticService {
     }
 
     /**
-     * Runs a Restic backup of the given paths.
+     * Runs a Restic backup of the given paths and parses its JSON Lines output.
      * Appends {@code --dry-run} when dry-run mode is active.
      */
-    public void backup(List<Path> paths) throws BackupException {
+    public ResticBackupResult backup(List<Path> paths) throws BackupException {
         List<String> args = new ArrayList<>();
         args.add("restic");
         args.add("backup");
-        args.add("--verbose=2");
+        args.add("--json");
         args.add("--tag");
         args.add(config.getResticTag());
         args.add("--group-by");
@@ -117,7 +118,12 @@ public class ResticService {
             args.add("--dry-run");
         }
         log.info("Running Restic backup of {} path(s)", paths.size());
-        shell.runLogged(args.toArray(new String[0]));
+        ResticOutputFormatter formatter = new ResticOutputFormatter();
+        shell.runStreaming(
+                progressEnvironment(),
+                formatter::accept,
+                args.toArray(new String[0]));
+        return formatter.result();
     }
 
     /**
@@ -125,8 +131,10 @@ public class ResticService {
      */
     public void applyRetention() throws BackupException {
         log.info("Applying Restic retention policy");
-        shell.runLogged(
-                "restic", "forget", "--prune", "--verbose=2",
+        shell.runStreaming(
+                progressEnvironment(),
+                line -> log.info("Restic: {}", line),
+                "restic", "forget", "--prune",
                 "--repo", config.getResticRepository().toString(),
                 "--password-file", config.getResticPasswordFile().toString(),
                 "--tag", config.getResticTag(),
@@ -176,5 +184,11 @@ public class ResticService {
                 "--repo", config.getResticRepository().toString(),
                 "--password-file", config.getResticPasswordFile().toString());
         log.info(stats);
+    }
+
+    private Map<String, String> progressEnvironment() throws BackupException {
+        return Map.of(
+                "RESTIC_PROGRESS_FPS",
+                Double.toString(config.getResticProgressFps()));
     }
 }

@@ -104,6 +104,7 @@ BACKUP_DEVICE_UUID=<uuid>
 RESTIC_REPOSITORY=/mnt/backup/restic
 RESTIC_PASSWORD_FILE=/etc/backup-service/restic.pass
 RESTIC_TAG=nextcloud
+RESTIC_PROGRESS_FPS=0.033333
 RESTIC_CACHE_DIR=/var/cache/backup
 RESTIC_RETENTION_DAILY=7
 RESTIC_RETENTION_WEEKLY=4
@@ -117,7 +118,7 @@ NEXTCLOUD_OCC_TIMEOUT=30
 NOTIFIER_DIR=/opt/home-lab/notifier
 ```
 
-`NEXTCLOUD_DATA_DIR`, `NEXTCLOUD_CONFIG_DIR`, and `NEXTCLOUD_BACKUP_DIR` have Snap defaults. Set `NEXTCLOUD_BACKUP_DIR` when the Snap export directory is non-standard. `RESTIC_TAG` identifies this backup set and must be non-blank. Backup parent selection and retention are grouped by host and this tag, so timestamped Snap export paths do not prevent reuse of the preceding snapshot. Retention values must be positive integers and path settings must be absolute.
+`NEXTCLOUD_DATA_DIR`, `NEXTCLOUD_CONFIG_DIR`, and `NEXTCLOUD_BACKUP_DIR` have Snap defaults. Set `NEXTCLOUD_BACKUP_DIR` when the Snap export directory is non-standard. `RESTIC_TAG` identifies this backup set and must be non-blank. Backup parent selection and retention are grouped by host and this tag, so timestamped Snap export paths do not prevent reuse of the preceding snapshot. `RESTIC_PROGRESS_FPS` controls formatted progress frequency and defaults to `0.033333` (approximately one update every 30 seconds); an environment variable with the same name takes precedence. Retention values must be positive integers and path settings must be absolute.
 
 Configuration precedence for dry-run mode is `DRY_RUN` environment variable, `--dry-run`, `DRY_RUN` in `backup.conf`, then `false`.
 
@@ -154,13 +155,13 @@ sudo java -jar /opt/backup/nextcloud-backup-manager.jar
 3. Validate Nextcloud OCC and the backup drive.
 4. Enable maintenance mode.
 5. Run `nextcloud.export -b` and detect the new export.
-6. Initialise and unlock Restic, then back up the Nextcloud data, configuration, and export with detailed progress logging and the configured tag.
+6. Initialise and unlock Restic, then back up the Nextcloud data, configuration, and export with JSON progress formatting and the configured tag.
 7. Apply daily, weekly, and monthly retention to snapshots with the configured tag using `restic forget --prune`.
 8. Remove exports and disable maintenance mode.
 9. Send a `SUCCESS` notification with the snapshot ID and duration.
 
 Failures are logged, reported through a `FAILURE` notification when possible, and trigger best-effort maintenance-mode cleanup.
-Restic backup and prune output is logged at INFO; other subprocess output remains at DEBUG.
+Restic backup JSON is rendered as compact progress and summary messages at INFO. Prune output is also logged at INFO; other subprocess output remains at DEBUG.
 
 ## Systemd deployment
 
