@@ -127,7 +127,7 @@ pipeline {
                     sh """
                         ssh ${DEPLOY_HOST} '\
                             cd ${STG_DEPLOY_PATH} && \
-                            java -jar app/nextcloud-backup-manager.jar --dry-run
+                            java -jar app/nextcloud-backup-manager.jar --dry-run'
                     """
                 }
             }
