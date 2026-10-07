@@ -9,7 +9,8 @@ pipeline {
 
     environment {
         DEPLOY_HOST = 'staging-deploy'          // SSH alias, see step 5
-        DEPLOY_PATH = '~/staging/backup-manager'
+        STG_DEPLOY_PATH = '~/staging/backup-manager'
+        PRD_DEPLOY_PATH = '/opt/backup'
         REPOSITORY = 'git@github.com:Pedro-Appel/nextcloud-backup-manager.git'
     }
 
@@ -28,7 +29,7 @@ pipeline {
             }
         }
 
-        stage('Await approval to merge into staging') {
+        stage('Await approval to deploy and merge staging candidate') {
             options {
                 timeout(time: 24, unit: 'HOURS')
             }
@@ -87,15 +88,16 @@ pipeline {
             steps {
                 sshagent(credentials: ['staging-ssh-key']) {
                     sh """
-                        ssh ${DEPLOY_HOST} 'mkdir -p ${DEPLOY_PATH}/app && \
-                            mkdir -p ${DEPLOY_PATH}/app/config && \
-                            chmod 0700 ${DEPLOY_PATH} && \
-                            chmod 0700 ${DEPLOY_PATH}/app && \
-                            chmod 0700 ${DEPLOY_PATH}/app/config'
-                        scp build/libs/nextcloud-backup-manager.jar ${DEPLOY_HOST}:${DEPLOY_PATH}/app/
-                        scp backup.conf ${DEPLOY_HOST}:${DEPLOY_PATH}/app/config/
-                        scp deploy/nextcloud-backup.service ${DEPLOY_HOST}:${DEPLOY_PATH}/app/
-                        scp deploy/nextcloud-backup.timer ${DEPLOY_HOST}:${DEPLOY_PATH}/app/
+                        ssh ${DEPLOY_HOST} 'mkdir -p ${STG_DEPLOY_PATH}/app && \
+                            mkdir -p ${STG_DEPLOY_PATH}/app/config && \
+                            chmod 0700 ${STG_DEPLOY_PATH} && \
+                            chmod 0700 ${STG_DEPLOY_PATH}/app && \
+                            chmod 0700 ${STG_DEPLOY_PATH}/app/config'
+                        scp build/libs/nextcloud-backup-manager.jar ${DEPLOY_HOST}:${STG_DEPLOY_PATH}/app/
+                        scp backup.conf ${DEPLOY_HOST}:${STG_DEPLOY_PATH}/app/config/
+                        scp deploy/deploy-nextcloud-backup.sh ${DEPLOY_HOST}:${STG_DEPLOY_PATH}/app/
+                        scp deploy/nextcloud-backup.service ${DEPLOY_HOST}:${STG_DEPLOY_PATH}/app/
+                        scp deploy/nextcloud-backup.timer ${DEPLOY_HOST}:${STG_DEPLOY_PATH}/app/
                     """
                 }
             }
@@ -106,7 +108,7 @@ pipeline {
                 sshagent(credentials: ['staging-ssh-key']) {
                     sh """
                         ssh ${DEPLOY_HOST} '\
-                            cd ${DEPLOY_PATH} && \
+                            cd ${STG_DEPLOY_PATH} && \
                             chmod 0644 app/nextcloud-backup-manager.jar && \
                             chmod 0600 app/config/backup.conf'
                     """
@@ -121,11 +123,46 @@ pipeline {
                 }
             }
         }
+
+        stage('Await approval to deploy and merge production candidate') {
+            options {
+                timeout(time: 24, unit: 'HOURS')
+            }
+            steps {
+                input message: "Staging passed for @ ${env.GIT_COMMIT?.take(7)}. \
+                    Deploy the staged candidate to production and publish the merge?",
+                      ok: 'Deploy & Merge'
+            }
+        }
+        
+        stage('Promote') {
+            steps {
+                sshagent(credentials: ['staging-ssh-key']) {
+                    sh """
+                        ssh ${DEPLOY_HOST} 'sudo -n /usr/local/sbin/deploy-nextcloud-backup'
+                    """
+                }
+            }
+        }
+
+        stage('Prepare main candidate') {
+            steps {
+                sshagent(credentials: ['git-checkout-key']) {
+                    sh """
+                        git config user.email "jenkins@mecha-rat"
+                        git config user.name  "Jenkins"
+                        git fetch origin +refs/heads/main:refs/remotes/origin/main +refs/heads/staging:refs/remotes/origin/staging
+                        git checkout -B main origin/main
+                        git merge --no-ff ${env.GIT_COMMIT} -m "Merge staging into main (build #${env.BUILD_NUMBER})"
+                    """
+                }
+            }
+        }
     }
 
     post {
         success {
-            echo "Staging candidate validated, deployed, and merged (#${env.BUILD_NUMBER}); timer was not changed."
+            echo "Main candidate validated, deployed, and merged (#${env.BUILD_NUMBER})"
         }
         aborted {
             echo "Merge/deploy was aborted, or the approval window timed out."
