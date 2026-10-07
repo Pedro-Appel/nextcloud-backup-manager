@@ -10,6 +10,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -102,24 +104,42 @@ public class NextcloudBackupService {
     }
 
     /**
-     * Deletes all regular files inside the Nextcloud backup directory.
+     * Deletes all contents inside the Nextcloud backup directory while preserving
+     * the directory itself. Snap exports are timestamped directories, so entries
+     * must be removed from deepest to shallowest.
      * Called after Restic has snapshotted the exports.
      */
     public void cleanupExports() throws BackupException {
         Path backupDir = config.getNextcloudBackupDir();
         log.info("Cleaning up Nextcloud export files in {}", backupDir);
-        try (Stream<Path> files = Files.walk(backupDir)) {
-            files.filter(Files::isRegularFile)
-                 .forEach(file -> {
-                     try {
-                         Files.delete(file);
-                         log.debug("Deleted export file: {}", file);
-                     } catch (IOException e) {
-                         log.warn("Could not delete export file {}: {}", file, e.getMessage());
-                     }
-                 });
+
+        List<Path> entries;
+        try (Stream<Path> paths = Files.walk(backupDir)) {
+            entries = paths.filter(path -> !path.equals(backupDir))
+                           .sorted(Comparator.reverseOrder())
+                           .toList();
         } catch (IOException e) {
             throw new BackupException("Failed to walk Nextcloud backup dir: " + backupDir, e);
+        }
+
+        IOException cleanupFailure = null;
+        for (Path entry : entries) {
+            try {
+                Files.deleteIfExists(entry);
+                log.debug("Deleted export entry: {}", entry);
+            } catch (IOException e) {
+                log.warn("Could not delete export entry {}: {}", entry, e.getMessage());
+                if (cleanupFailure == null) {
+                    cleanupFailure = e;
+                } else {
+                    cleanupFailure.addSuppressed(e);
+                }
+            }
+        }
+
+        if (cleanupFailure != null) {
+            throw new BackupException(
+                    "Failed to clean Nextcloud backup dir: " + backupDir, cleanupFailure);
         }
     }
 

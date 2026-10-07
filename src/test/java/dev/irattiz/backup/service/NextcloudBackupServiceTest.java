@@ -107,16 +107,16 @@ class NextcloudBackupServiceTest {
     // ------------------------------------------------------------------
 
     @Test
-    void cleanupExportsDeletesAllFiles() throws Exception {
-        // Create three files in the backup dir
+    void cleanupExportsDeletesAllContents() throws Exception {
         Files.createFile(backupDir.resolve("export-1.tar.gz"));
-        Files.createFile(backupDir.resolve("export-2.tar.gz"));
-        Files.createFile(backupDir.resolve("export-3.tar.gz"));
+        Path exportDir = Files.createDirectories(backupDir.resolve("20261007-064240/database"));
+        Files.createFile(exportDir.resolve("nextcloud.sql"));
 
         service.cleanupExports();
 
-        // All files deleted, but directory itself still exists
         assertTrue(Files.isDirectory(backupDir), "Directory should still exist after cleanup");
-        assertEquals(0, Files.list(backupDir).count(), "All files should have been deleted");
+        try (var entries = Files.list(backupDir)) {
+            assertEquals(0, entries.count(), "All export files and directories should be deleted");
+        }
     }
 }
